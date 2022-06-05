@@ -1,0 +1,8 @@
+.mainGraph {
+    width: 400px;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
