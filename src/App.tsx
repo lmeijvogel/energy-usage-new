@@ -39,8 +39,14 @@ export const App = () => {
     }, [periodDescription, setGasData]);
 
     const choosePeriod = (index: number) => {
-        if (periodDescription instanceof MonthDescription || periodDescription instanceof YearDescription) {
-            setPeriodDescription(periodDescription.atIndex(index));
+        const newPeriod = periodDescription.atIndex(index);
+
+        if (
+            newPeriod instanceof DayDescription ||
+            newPeriod instanceof MonthDescription ||
+            newPeriod instanceof YearDescription
+        ) {
+            setPeriodDescription(newPeriod);
         }
     };
 

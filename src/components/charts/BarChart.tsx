@@ -241,7 +241,9 @@ export class BarChart extends React.Component<Props> {
     }
 
     private buildTooltipContents(index: number, value: number) {
-        return `${this.props.tooltipLabelBuilder(index)}:<br />${value} ${unitToString(
+        const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(value);
+
+        return `${this.props.periodDescription.atIndex(index).toShortTitle()}:<br />${formattedValue} ${unitToString(
             this.props.graphDescription.fieldName
         )}`;
     }

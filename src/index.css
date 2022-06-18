@@ -10,3 +10,11 @@ body {
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+.tooltip {
+    position: absolute;
+    background: white;
+
+    padding: 3px;
+    border: 1px solid #f0f0f0;
+}

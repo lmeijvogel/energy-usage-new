@@ -16,6 +16,24 @@ describe("PeriodDescriptions", () => {
     });
 
     describe("atIndex", () => {
+        it("should return the correct HourDescription", () => {
+            const dayDescription = new DayDescription(2022, 2, 2);
+
+            const first = dayDescription.atIndex(0);
+
+            expect(first.year).toEqual(2022);
+            expect(first.month).toEqual(2);
+            expect(first.day).toEqual(2);
+            expect(first.hour).toEqual(0);
+
+            const last = dayDescription.atIndex(23);
+
+            expect(last.year).toEqual(2022);
+            expect(last.month).toEqual(2);
+            expect(last.day).toEqual(2);
+            expect(last.hour).toEqual(23);
+        });
+
         it("should return the correct DayDescription", () => {
             const monthDescription = new MonthDescription(2022, 2);
 

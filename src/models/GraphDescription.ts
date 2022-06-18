@@ -51,6 +51,14 @@ export abstract class GraphDescription {
                 return assertNever(this.periodDescription.periodSize);
         }
     }
+
+    get tooltipValueFormat() {
+        return ".2f";
+    }
+
+    protected get periodSize(): "year" | "month" | "day" {
+        return this.periodDescription.periodSize;
+    }
 }
 
 function range(start: number, end: number): number[] {
@@ -68,7 +76,7 @@ export class GasGraphDescription extends GraphDescription {
     readonly fieldName = "gas";
 
     get maxY() {
-        switch (this.periodDescription.periodSize) {
+        switch (this.periodSize) {
             case "year":
                 return 400;
             case "month":
@@ -76,7 +84,7 @@ export class GasGraphDescription extends GraphDescription {
             case "day":
                 return 3;
             default:
-                return assertNever(this.periodDescription.periodSize);
+                return assertNever(this.periodSize);
         }
     }
 }
@@ -86,7 +94,7 @@ export class StroomGraphDescription extends GraphDescription {
     readonly fieldName = "stroom";
 
     get maxY() {
-        switch (this.periodDescription.periodSize) {
+        switch (this.periodSize) {
             case "year":
                 return 600;
             case "month":
@@ -94,7 +102,7 @@ export class StroomGraphDescription extends GraphDescription {
             case "day":
                 return 2;
             default:
-                return assertNever(this.periodDescription.periodSize);
+                return assertNever(this.periodSize);
         }
     }
 }
@@ -104,7 +112,7 @@ export class WaterGraphDescription extends GraphDescription {
     readonly fieldName = "water";
 
     get maxY() {
-        switch (this.periodDescription.periodSize) {
+        switch (this.periodSize) {
             case "year":
                 return 30000;
             case "month":
@@ -112,7 +120,11 @@ export class WaterGraphDescription extends GraphDescription {
             case "day":
                 return 200;
             default:
-                return assertNever(this.periodDescription.periodSize);
+                return assertNever(this.periodSize);
         }
+    }
+
+    get tooltipValueFormat() {
+        return "d";
     }
 }

@@ -67,6 +67,8 @@ export abstract class PeriodDescription {
     }
 
     abstract startOfPeriod(): Date;
+
+    abstract atIndex(index: number): PeriodDescription;
 }
 
 export class YearDescription extends PeriodDescription {
@@ -242,7 +244,96 @@ export class DayDescription extends PeriodDescription {
     }
 
     formatTick(index: number) {
-        return `d${index}`;
+        return `${index}`;
+    }
+
+    atIndex(index: number): HourDescription {
+        return new HourDescription(this.year, this.month, this.day, index);
+    }
+}
+
+export class HourDescription extends PeriodDescription {
+    constructor(
+        public readonly year: number,
+        public readonly month: number,
+        public readonly day: number,
+        public readonly hour: number
+    ) {
+        super();
+    }
+
+    readonly periodSize = "day"; // TODO: Should not be used!
+    readonly graphTickPositions = "on_value";
+
+    padDatePart(part: number): string {
+        const stringPart = part.toString();
+
+        switch (stringPart.length) {
+            case 0:
+                return "00";
+            case 1:
+                return "0" + stringPart;
+            default:
+                return stringPart;
+        }
+    }
+
+    toUrl() {
+        return "";
+    }
+    toTitle() {
+        return `${this.up().toTitle} ${this.hour}:00`;
+    }
+    toDate() {
+        return new Date(this.year, this.month - 1, this.day, this.hour, 0);
+    }
+
+    previous() {
+        this.warnNotSupported();
+        return this;
+    }
+    next() {
+        this.warnNotSupported();
+        return this;
+    }
+
+    up(): DayDescription {
+        return new DayDescription(this.year, this.month, this.day);
+    }
+
+    formatTick(index: number) {
+        return `${index}`;
+    }
+
+    hasMeasurements(): boolean {
+        return !this.beforeFirstMeasurement() && !this.isInFuture();
+    }
+
+    beforeFirstMeasurement(): boolean {
+        return this.relevantDateParts(this.toDate()) < this.relevantDateParts(firstMeasurementDate);
+    }
+
+    relevantDateParts(date: Date): Date {
+        return date;
+    }
+
+    startOfPeriod() {
+        return new Date(this.year, this.month - 1, this.day, this.hour, 0);
+    }
+
+    atIndex(_index: number) {
+        this.warnNotSupported();
+        return this;
+    }
+
+    toShortTitle() {
+        const nextHour = (this.hour + 1) % 24;
+        const hourDisplay = `${this.hour}:00-${nextHour}:00`;
+        return `${hourDisplay}`;
+    }
+
+    private warnNotSupported() {
+        console.warn("HourDescription is not a fully supported PeriodDescription.");
     }
 }
 
