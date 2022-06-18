@@ -1,60 +1,49 @@
 // import formatInTimeZone from "date-fns-tz/formatInTimeZone";
 // import zonedTimeToUtc from "date-fns-tz/zonedTimeToUtc";
-import { useCallback, useEffect, useState } from "react";
-import { BarChart } from "./components/BarChart";
-import { DayDescription, MonthDescription, PeriodDescription } from "./models/PeriodDescription";
+import { useEffect, useState } from "react";
+import { BarChart } from "./components/charts/BarChart";
+import { DayDescription, MonthDescription, PeriodDescription, YearDescription } from "./models/PeriodDescription";
 
 import styles from "./App.module.css";
-import { NavigationButtons } from "./NavigationButtons";
 import { Card } from "./components/Card";
-import { parseISO } from "date-fns";
 import { CardTitle } from "./components/CardTitle";
+import { NavigationButtons } from "./components/NavigationButtons";
+import { GasGraphDescription, StroomGraphDescription, WaterGraphDescription } from "./models/GraphDescription";
+import { padData } from "./helpers/padData";
+import { MeasurementEntry } from "./models/MeasurementEntry";
 
 // import {     zonedTimeToUtc } from 'date-fns';
 
-const useData: () => [Date[], number[], (json: [Date, number][]) => void] = () => {
-    const [labels, setLabels] = useState<Date[]>([]);
-    const [values, setValues] = useState<number[]>([]);
-
-    const update = useCallback((json: [Date, number][]) => {
-        setLabels(json.map((value: [Date, number]) => new Date(value[0])));
-        setValues(json.map((value: [Date, number]) => round(value[1], 3)));
-    }, []);
-
-    return [labels, values, update];
-};
-
-type JsonResponseEntry = [dateString: string, value: number];
-
 export const App = () => {
-    const [gasLabels, gasValues, updateGas] = useData();
-    const [stroomLabels, stroomValues, updateStroom] = useData();
-    const [waterLabels, waterValues, updateWater] = useData();
+    const [gasData, setGasData] = useState<number[]>([]);
+    const [stroomData, setStroomData] = useState<number[]>([]);
+    const [waterData, setWaterData] = useState<number[]>([]);
+    const [labels, setLabels] = useState<Date[]>([]);
 
     // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new MonthDescription(2022, 3));
-    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new DayDescription(2022, 3, 1));
+    // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new YearDescription(2021));
+    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new DayDescription(2022, 5, 1));
     useEffect(() => {
-        const date = periodDescription.toUrl();
+        const url = periodDescription.toUrl();
 
-        fetch(`/api/${date}/gas`)
+        fetch(`/api/${url}`)
             .then((response) => response.json())
-            .then((json) => json.map(([dateString, value]: JsonResponseEntry) => [parseISO(dateString), value]))
-            .then(updateGas);
+            .then((json) => padData(json, periodDescription.startOfPeriod(), periodDescription.periodSize))
+            .then((data: MeasurementEntry[]) => {
+                console.log({ data });
+                setLabels(data.map((row) => new Date(row.year, row.month + 1, row.day)));
+                setGasData(data.map((row) => row.gas));
+                setStroomData(data.map((row) => row.stroom));
+                setWaterData(data.map((row) => row.water));
+            });
+    }, [periodDescription, setGasData]);
 
-        fetch(`/api/${date}/stroom`)
-            .then((response) => response.json())
-            .then((json) => json.map(([dateString, value]: JsonResponseEntry) => [parseISO(dateString), value]))
-            .then(updateStroom);
+    const choosePeriod = (index: number) => {
+        if (periodDescription instanceof MonthDescription || periodDescription instanceof YearDescription) {
+            setPeriodDescription(periodDescription.atIndex(index));
+        }
+    };
 
-        fetch(`/api/${date}/water`)
-            .then((response) => response.json())
-            .then((json) =>
-                json.map(([dateString, value]: [dateString: string, value: number]) => [parseISO(dateString), value])
-            )
-            .then(updateWater);
-    }, [periodDescription, updateGas, updateStroom, updateWater]);
-
-    const noop = () => {};
     const toString = (el: any) => el.toString();
 
     return (
@@ -64,48 +53,42 @@ export const App = () => {
             </div>
             <div className={styles.row}>
                 <Card>
-                    <CardTitle label="Gas" labels={gasLabels} series={gasValues} fieldName="gas" />
+                    <CardTitle label="Gas" labels={labels} series={gasData} fieldName="gas" />
                     <BarChart
                         label="Gas"
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
-                        fieldName="gas"
-                        series={gasValues}
-                        maxY={12}
-                        color={"#e73711"}
-                        onClick={noop}
+                        graphDescription={new GasGraphDescription(periodDescription)}
+                        series={gasData}
+                        onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
-                        graphTickPositions={"on_value"}
+                        graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
                 <Card>
-                    <CardTitle label="Stroom" labels={stroomLabels} series={stroomValues} fieldName="stroom" />
+                    <CardTitle label="Stroom" labels={labels} series={stroomData} fieldName="stroom" />
                     <BarChart
                         label="Stroom"
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
-                        fieldName="stroom"
-                        series={stroomValues}
-                        maxY={12}
-                        color={"#f0ad4e"}
-                        onClick={noop}
+                        graphDescription={new StroomGraphDescription(periodDescription)}
+                        series={stroomData}
+                        onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
-                        graphTickPositions={"on_value"}
+                        graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
                 <Card>
-                    <CardTitle label="Water" labels={waterLabels} series={waterValues} fieldName="water" />
+                    <CardTitle label="Water" labels={labels} series={waterData} fieldName="water" />
                     <BarChart
                         label="Water"
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
-                        fieldName="water"
-                        series={waterValues}
-                        maxY={1200}
-                        color={"#428bca"}
-                        onClick={noop}
+                        graphDescription={new WaterGraphDescription(periodDescription)}
+                        series={waterData}
+                        onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
-                        graphTickPositions={"on_value"}
+                        graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
             </div>

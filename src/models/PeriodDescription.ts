@@ -2,7 +2,7 @@ export type GraphTickPositions = "on_value" | "between_values";
 
 const DAYS_OF_WEEK = ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"];
 
-const MONTHS = [
+const FULL_MONTH_NAMES = [
     "januari",
     "februari",
     "maart",
@@ -17,9 +17,12 @@ const MONTHS = [
     "december"
 ];
 
+const ABBREV_MONTH_NAMES = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+
 const firstMeasurementDate = new Date(2014, 2, 3);
 
 export abstract class PeriodDescription {
+    abstract readonly periodSize: "year" | "month" | "day";
     abstract readonly graphTickPositions: GraphTickPositions;
 
     padDatePart(part: number): string {
@@ -43,6 +46,8 @@ export abstract class PeriodDescription {
     abstract next(): PeriodDescription;
     abstract up(): PeriodDescription | null;
 
+    abstract formatTick(index: number): string;
+
     hasMeasurements(): boolean {
         return !this.beforeFirstMeasurement() && !this.isInFuture();
     }
@@ -65,6 +70,7 @@ export abstract class PeriodDescription {
 }
 
 export class YearDescription extends PeriodDescription {
+    readonly periodSize = "year";
     readonly graphTickPositions = "on_value";
 
     year: number;
@@ -87,7 +93,7 @@ export class YearDescription extends PeriodDescription {
     }
 
     toUrl() {
-        return "/months/" + this.year;
+        return "/year/" + this.year;
     }
 
     toTitle() {
@@ -105,9 +111,18 @@ export class YearDescription extends PeriodDescription {
     startOfPeriod(): Date {
         return new Date(this.year, 0, 1);
     }
+
+    formatTick(index: number) {
+        return ABBREV_MONTH_NAMES[index]; // `${index + 1}`;
+    }
+
+    atIndex(index: number): MonthDescription {
+        return new MonthDescription(this.year, index);
+    }
 }
 
 export class MonthDescription extends PeriodDescription {
+    readonly periodSize = "month";
     readonly graphTickPositions = "on_value";
 
     year: number;
@@ -136,15 +151,11 @@ export class MonthDescription extends PeriodDescription {
     }
 
     toUrl() {
-        return "/days/" + this.formatForUrl();
-    }
-
-    formatForUrl(): string {
-        return this.year + "-" + this.padDatePart(this.month + 1);
+        return `/month/${this.year}/${this.month + 1}`;
     }
 
     toTitle() {
-        return `${MONTHS[this.month]} ${this.year}`;
+        return `${FULL_MONTH_NAMES[this.month]} ${this.year}`;
     }
 
     toDate() {
@@ -158,9 +169,18 @@ export class MonthDescription extends PeriodDescription {
     startOfPeriod(): Date {
         return new Date(this.year, this.month, 1);
     }
+
+    formatTick(index: number) {
+        return `${index + 1}`;
+    }
+
+    atIndex(index: number): DayDescription {
+        return new DayDescription(this.year, this.month, index + 1);
+    }
 }
 
 export class DayDescription extends PeriodDescription {
+    readonly periodSize = "day";
     readonly graphTickPositions = "between_values";
 
     year: number;
@@ -190,13 +210,13 @@ export class DayDescription extends PeriodDescription {
     }
 
     toUrl() {
-        return "/hours/" + this.year + "-" + this.padDatePart(this.month + 1) + "-" + this.padDatePart(this.day);
+        return `/day/${this.year}/${this.month + 1}/${this.day}`;
     }
 
     toTitle() {
         const date = new Date(this.year, this.month, this.day);
 
-        return `${DAYS_OF_WEEK[date.getDay()]} ${this.day} ${MONTHS[this.month]} ${this.year}`;
+        return `${DAYS_OF_WEEK[date.getDay()]} ${this.day} ${FULL_MONTH_NAMES[this.month]} ${this.year}`;
     }
 
     toDate() {
@@ -204,7 +224,7 @@ export class DayDescription extends PeriodDescription {
     }
 
     toShortTitle() {
-        return `${this.day} ${MONTHS[this.month]} ${this.year}`;
+        return `${this.day} ${FULL_MONTH_NAMES[this.month]} ${this.year}`;
     }
 
     relevantDateParts(date: Date): Date {
@@ -219,6 +239,10 @@ export class DayDescription extends PeriodDescription {
 
     startOfPeriod(): Date {
         return new Date(this.year, this.month, this.day);
+    }
+
+    formatTick(index: number) {
+        return `d${index}`;
     }
 }
 

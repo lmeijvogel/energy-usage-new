@@ -1,4 +1,5 @@
-import { addDays, addHours, isSameDay } from "date-fns";
+import { addDays, addHours } from "date-fns";
+import { createMeasurementEntry, MeasurementEntry } from "../models/MeasurementEntry";
 import { padData } from "./padData";
 
 describe("padData", () => {
@@ -15,43 +16,52 @@ describe("padData", () => {
 
         const add = (hours: number) => addHours(date, hours);
 
-        const data: [Date, number][] = [
-            [add(2), 12],
-            [add(5), 15],
-            [add(10), 10]
+        const data: MeasurementEntry[] = [
+            createMeasurementEntry({ stroom: 12 }, add(2)),
+            createMeasurementEntry({ stroom: 15 }, add(5)),
+            createMeasurementEntry({ stroom: 10 }, add(10))
         ];
 
         const paddedData = padData(data, new Date(2022, 2, 2), "day");
 
         const expected = [
-            [add(0), 0],
-            [add(1), 0],
-            [add(2), 12],
-            [add(3), 0],
-            [add(4), 0],
-            [add(5), 15],
-            [add(6), 0],
-            [add(7), 0],
-            [add(8), 0],
-            [add(9), 0],
-            [add(10), 10],
-            [add(11), 0],
-            [add(12), 0],
-            [add(13), 0],
-            [add(14), 0],
-            [add(15), 0],
-            [add(16), 0],
-            [add(17), 0],
-            [add(18), 0],
-            [add(19), 0],
-            [add(20), 0],
-            [add(21), 0],
-            [add(22), 0],
-            [add(23), 0]
+            [0, 0],
+            [1, 0],
+            [2, 12],
+            [3, 0],
+            [4, 0],
+            [5, 15],
+            [6, 0],
+            [7, 0],
+            [8, 0],
+            [9, 0],
+            [10, 10],
+            [11, 0],
+            [12, 0],
+            [13, 0],
+            [14, 0],
+            [15, 0],
+            [16, 0],
+            [17, 0],
+            [18, 0],
+            [19, 0],
+            [20, 0],
+            [21, 0],
+            [22, 0],
+            [23, 0]
         ];
 
         expect(paddedData.length).toEqual(24);
-        expect(paddedData).toEqual(expect.arrayContaining(expected));
+
+        expected.forEach(([hour, value], i) => {
+            const currentElement = paddedData[i];
+
+            expect(currentElement.day).toEqual(2);
+            expect(currentElement.month).toEqual(2);
+            expect(currentElement.year).toEqual(2022);
+            expect(currentElement.hour).toEqual(hour);
+            expect(currentElement.stroom).toEqual(value);
+        });
     });
 
     it("pads month data if it is necessary", () => {
@@ -59,63 +69,67 @@ describe("padData", () => {
 
         const add = (days: number) => addDays(date, days);
 
-        const data: [Date, number][] = [
-            [add(2), 12],
-            [add(5), 15],
-            [add(10), 10]
+        const data: MeasurementEntry[] = [
+            createMeasurementEntry({ stroom: 12 }, add(2)),
+            createMeasurementEntry({ stroom: 15 }, add(5)),
+            createMeasurementEntry({ stroom: 10 }, add(10))
         ];
 
-        const paddedData = padData(data, new Date(2022, 1, 1), "month");
+        const paddedData = padData(data, date, "month");
 
         const expected = [
-            [add(0), 0],
-            [add(1), 0],
-            [add(2), 12],
-            [add(3), 0],
-            [add(4), 0],
-            [add(5), 15],
-            [add(6), 0],
-            [add(7), 0],
-            [add(8), 0],
-            [add(9), 0],
-            [add(10), 10],
-            [add(11), 0],
-            [add(12), 0],
-            [add(13), 0],
-            [add(14), 0],
-            [add(15), 0],
-            [add(16), 0],
-            [add(17), 0],
-            [add(18), 0],
-            [add(19), 0],
-            [add(20), 0],
-            [add(21), 0],
-            [add(22), 0],
-            [add(23), 0],
-            [add(24), 0],
-            [add(25), 0],
-            [add(26), 0],
-            [add(27), 0]
+            [1, 0],
+            [2, 0],
+            [3, 12],
+            [4, 0],
+            [5, 0],
+            [6, 15],
+            [7, 0],
+            [8, 0],
+            [9, 0],
+            [10, 0],
+            [11, 10],
+            [12, 0],
+            [13, 0],
+            [14, 0],
+            [15, 0],
+            [16, 0],
+            [17, 0],
+            [18, 0],
+            [19, 0],
+            [20, 0],
+            [21, 0],
+            [22, 0],
+            [23, 0],
+            [24, 0],
+            [25, 0],
+            [26, 0],
+            [27, 0],
+            [28, 0]
         ];
 
         expect(paddedData.length).toEqual(28);
 
+        for (let i = 0; i < 28; i++) {}
         expected.forEach(([day, value], i) => {
             const currentElement = paddedData[i];
 
-            expect(isSameDay(currentElement[0], day)).toBeTruthy();
-            expect(currentElement[1]).toEqual(value);
+            expect(currentElement.day).toEqual(day);
+            expect(currentElement.month).toEqual(1);
+            expect(currentElement.year).toEqual(2022);
+            expect(currentElement.stroom).toEqual(value);
         });
     });
 });
 
-function generateCompleteDayData(): [Date, number][] {
-    let result: [Date, number][] = [];
+function generateCompleteDayData(): MeasurementEntry[] {
+    let result: MeasurementEntry[] = [];
 
     for (let hour = 0; hour < 24; hour++) {
-        result.push([new Date(2022, 2, 2, hour, 0, 0), 12]);
+        result.push(createMeasurementEntry({}, new Date(2022, 2, 2, hour, 0, 0)));
     }
 
     return result;
 }
+
 export {};

@@ -18,7 +18,7 @@ export function CardTitle({ label, labels, fieldName, series }: Props) {
     function totalUsage() {
         const actualValues = series.filter(isNotNull);
 
-        return Math.max(...actualValues) - Math.min(...actualValues);
+        return actualValues.reduce((total, value) => total + value, 0);
     }
 
     const chartTitle = buildChartTitle(label, totalUsage(), fieldName, firstTimestamp);

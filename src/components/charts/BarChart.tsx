@@ -5,21 +5,19 @@ import * as d3 from "d3";
 
 // import { getTimes } from "suncalc";
 
-import { unitToString } from "../helpers/unitToString";
-import { UsageField } from "../models/UsageData";
-import { GraphTickPositions, PeriodDescription } from "../models/PeriodDescription";
+import { unitToString } from "../../helpers/unitToString";
+import { GraphTickPositions, PeriodDescription } from "../../models/PeriodDescription";
+import { GraphDescription } from "../../models/GraphDescription";
 // import { drawTimeBands } from "./drawTimeBands";
 
 type Props = {
     className?: string;
-    fieldName: UsageField;
     label: string;
     periodDescription: PeriodDescription;
+    graphDescription: GraphDescription;
     series: number[];
-    maxY: number;
-    color: string;
     // colorIntense: string;
-    onClick: (index: number) => void;
+    onBarClick: (index: number) => void;
     tooltipLabelBuilder: (title: number) => string;
     graphTickPositions: GraphTickPositions;
 };
@@ -34,7 +32,6 @@ const padding = {
 };
 
 const axisWidth = 30;
-const axisHeight = 10;
 
 export class BarChart extends React.Component<Props> {
     private readonly elementRef = createRef<SVGSVGElement>();
@@ -54,8 +51,6 @@ export class BarChart extends React.Component<Props> {
 
     private readonly scaleY: d3.ScaleLinear<number, number, never>;
     private readonly yAxis: d3.Axis<d3.NumberValue>;
-
-    private ignoreClickEvent = false;
 
     constructor(props: Props) {
         super(props);
@@ -100,14 +95,6 @@ export class BarChart extends React.Component<Props> {
         const id = this.elementRef.current!.id;
 
         this.svg = d3.select("#" + id).attr("viewBox", `0 0 ${width} ${height}`);
-
-        this.svg.on("click", () => {
-            if (this.ignoreClickEvent) {
-                return;
-            }
-
-            this.svg!.select("g.selection").select("rect").attr("display", "none");
-        });
     }
 
     private renderGraph(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
@@ -117,11 +104,12 @@ export class BarChart extends React.Component<Props> {
 
         // this.scaleXForInversion.domain(domain).range([padding.left + axisWidth, width - padding.right]);
 
-        this.scaleY.domain([0, this.props.maxY]).range([height - padding.bottom - axisHeight, padding.top]);
+        const xAxisHeight = this.props.graphDescription.xLabelHeight;
+        this.scaleY
+            .domain([0, this.props.graphDescription.maxY])
+            .range([height - padding.bottom - xAxisHeight, padding.top]);
 
         this.updateAxes(svg);
-
-        this.drawGridLines(svg);
 
         this.drawBars(svg, this.props.series);
 
@@ -138,9 +126,9 @@ export class BarChart extends React.Component<Props> {
         // }
     }
 
-    private clickBar = ({ target }: { target: SVGRectElement }) => {
+    private onBarClick = ({ target }: { target: SVGRectElement }) => {
         const index = parseInt(target.attributes.getNamedItem("index")!.value, 10);
-        this.props.onClick(index);
+        this.props.onBarClick(index);
     };
 
     private showTooltip = (event: any, value: number) => {
@@ -180,33 +168,42 @@ export class BarChart extends React.Component<Props> {
         if (this.props.graphTickPositions === "on_value") {
             xAxis = d3
                 .axisBottom(this.scaleX as any)
-                .tickValues(d3.range(0, this.props.series.length, 2))
-                .tickFormat((n: any) => `${(n as number) + 1}`)
-                .tickSizeOuter(0);
+                .tickValues(this.props.graphDescription.displayedTickIndices)
+                .tickFormat((n: any) => this.props.periodDescription.formatTick(n as number));
         } else {
-            xAxis = d3.axisBottom(scaleXForXAxis);
+            xAxis = d3.axisBottom(scaleXForXAxis).tickSizeOuter(0);
         }
 
-        svg.select(".xAxis")
+        /* Remove and repaint the axis: When switching between scales (or formatting, not sure),
+         * the first tick kept getting painted wrong (shifted to the left).
+         *
+         * Starting clean fixes this.
+         */
+        svg.select("g.xAxis").remove();
+
+        const renderedXAxis = svg
+            .append("g")
+            .attr("class", "xAxis")
             .attr("transform", `translate(0, ${this.scaleY(0)})`)
-            .call(xAxis);
+            .call(xAxis)
+            .selectAll("text")
+            .style("font-size", "13pt");
+
+        if (this.props.graphDescription.hasTextLabels) {
+            renderedXAxis
+                .style("text-anchor", "end")
+                .attr("dy", "-.2em")
+                .attr("dx", "-1em")
+                .attr("transform", "rotate(-65)");
+        } else {
+            // Got the 0.71em from the browser
+            renderedXAxis.style("text-anchor", null).attr("dy", "0.71em").attr("transform", null);
+        }
+
         svg.select(".yAxis")
             .attr("transform", `translate(${padding.left + axisWidth}, 0)`)
+            .style("font-size", "13pt")
             .call(this.yAxis as any);
-    }
-
-    private drawGridLines(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        const yTickValues = this.yAxis.tickValues() || this.scaleY.ticks();
-        svg.select("g.gridLines")
-            .selectAll("line")
-            .data(yTickValues)
-            .join("line")
-            .attr("x1", padding.left + axisWidth)
-            .attr("y1", (el: any) => this.scaleY(el))
-            .attr("x2", width - padding.right)
-            .attr("y2", (el: any) => this.scaleY(el))
-            .attr("stroke", "#ddd")
-            .attr("stroke-width", 1);
     }
 
     private drawBars(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>, relativeData: number[]) {
@@ -214,7 +211,7 @@ export class BarChart extends React.Component<Props> {
             .selectAll("rect")
             .data(relativeData)
             .join("rect")
-            .on("click", this.clickBar)
+            .on("click", this.onBarClick)
             .on("mouseenter", this.showTooltip)
             .on("mouseleave", this.hideTooltip)
 
@@ -222,7 +219,7 @@ export class BarChart extends React.Component<Props> {
             .attr("height", (el: number) => this.scaleY(0) - this.scaleY(el))
             .attr("x", (_val: number, i: number) => this.calculateBarXPosition(i))
             .attr("width", this.scaleX.bandwidth())
-            .attr("fill", this.props.color)
+            .attr("fill", this.props.graphDescription.barColor)
             .attr("index", (_d: any, i: number) => i);
     }
 
@@ -244,6 +241,8 @@ export class BarChart extends React.Component<Props> {
     }
 
     private buildTooltipContents(index: number, value: number) {
-        return `${this.props.tooltipLabelBuilder(index)}:<br />${value} ${unitToString(this.props.fieldName)}`;
+        return `${this.props.tooltipLabelBuilder(index)}:<br />${value} ${unitToString(
+            this.props.graphDescription.fieldName
+        )}`;
     }
 }
