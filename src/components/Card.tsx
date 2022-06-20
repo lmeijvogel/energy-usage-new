@@ -1,10 +1,12 @@
+import classnames from "classnames";
 import { ReactElement } from "react";
 import styles from "./Card.module.css";
 
 type Props = {
+    className?: string;
     children: ReactElement | ReactElement[];
 };
 
-export function Card({ children }: Props) {
-    return <div className={styles.card}>{children}</div>;
+export function Card({ className, children }: Props) {
+    return <div className={classnames(styles.card, className)}>{children}</div>;
 }

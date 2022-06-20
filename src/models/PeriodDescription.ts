@@ -136,6 +136,11 @@ export class MonthDescription extends PeriodDescription {
         this.month = month;
     }
 
+    static thisMonth() {
+        const now = new Date();
+
+        return new MonthDescription(now.getFullYear(), now.getMonth());
+    }
     previous() {
         const date = new Date(this.year, this.month - 1, 1);
 
