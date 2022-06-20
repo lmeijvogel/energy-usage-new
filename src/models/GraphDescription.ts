@@ -9,6 +9,8 @@ export abstract class GraphDescription {
     abstract readonly barColor: string;
     abstract readonly fieldName: UsageField;
 
+    abstract readonly displayableUnit: string;
+
     abstract get maxY(): number;
 
     get xLabelHeight(): number {
@@ -75,6 +77,8 @@ export class GasGraphDescription extends GraphDescription {
     readonly barColor = "#e73711";
     readonly fieldName = "gas";
 
+    readonly displayableUnit = "m³";
+
     get maxY() {
         switch (this.periodSize) {
             case "year":
@@ -92,6 +96,7 @@ export class GasGraphDescription extends GraphDescription {
 export class StroomGraphDescription extends GraphDescription {
     readonly barColor = "#f0ad4e";
     readonly fieldName = "stroom";
+    readonly displayableUnit = "kWh";
 
     get maxY() {
         switch (this.periodSize) {
@@ -110,6 +115,8 @@ export class StroomGraphDescription extends GraphDescription {
 export class WaterGraphDescription extends GraphDescription {
     readonly barColor = "#428bca";
     readonly fieldName = "water";
+
+    readonly displayableUnit = "L";
 
     get maxY() {
         switch (this.periodSize) {

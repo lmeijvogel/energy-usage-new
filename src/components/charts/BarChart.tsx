@@ -5,7 +5,6 @@ import * as d3 from "d3";
 
 // import { getTimes } from "suncalc";
 
-import { unitToString } from "../../helpers/unitToString";
 import { GraphTickPositions, PeriodDescription } from "../../models/PeriodDescription";
 import { GraphDescription } from "../../models/GraphDescription";
 // import { drawTimeBands } from "./drawTimeBands";
@@ -243,8 +242,8 @@ export class BarChart extends React.Component<Props> {
     private buildTooltipContents(index: number, value: number) {
         const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(value);
 
-        return `${this.props.periodDescription.atIndex(index).toShortTitle()}:<br />${formattedValue} ${unitToString(
-            this.props.graphDescription.fieldName
-        )}`;
+        return `${this.props.periodDescription.atIndex(index).toShortTitle()}:<br />${formattedValue} ${
+            this.props.graphDescription.displayableUnit
+        }`;
     }
 }

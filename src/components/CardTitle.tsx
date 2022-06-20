@@ -1,6 +1,6 @@
 import { costsFor, PriceCategory } from "../helpers/PriceCalculator";
-import { unitToString } from "../helpers/unitToString";
 import { assertNever } from "../lib/assertNever";
+import { GraphDescription } from "../models/GraphDescription";
 import { UsageField } from "../models/UsageData";
 
 import styles from "./CardTitle.module.css";
@@ -9,10 +9,11 @@ type Props = {
     label: string;
     labels: Date[];
     fieldName: UsageField;
+    graphDescription: GraphDescription;
     series: number[];
 };
 
-export function CardTitle({ label, labels, fieldName, series }: Props) {
+export function CardTitle({ label, labels, fieldName, graphDescription, series }: Props) {
     const firstTimestamp = labels[0];
 
     function totalUsage() {
@@ -21,7 +22,7 @@ export function CardTitle({ label, labels, fieldName, series }: Props) {
         return actualValues.reduce((total, value) => total + value, 0);
     }
 
-    const chartTitle = buildChartTitle(label, totalUsage(), fieldName, firstTimestamp);
+    const chartTitle = buildChartTitle(label, totalUsage(), fieldName, graphDescription, firstTimestamp);
 
     return <h3 className={styles.title}>{chartTitle}</h3>;
 }
@@ -30,8 +31,14 @@ function isNotNull<T>(x: T | null | undefined): x is T {
     return x !== null && x !== undefined;
 }
 
-function buildChartTitle(label: string, usage: number, fieldName: UsageField, firstTimestamp: Date | null): string {
-    return `${label}: ${printableTotal(usage)} ${unitToString(fieldName)} (${printableCosts(
+function buildChartTitle(
+    label: string,
+    usage: number,
+    fieldName: UsageField,
+    graphDescription: GraphDescription,
+    firstTimestamp: Date | null
+): string {
+    return `${label}: ${printableTotal(usage)} ${graphDescription.displayableUnit} (${printableCosts(
         usage,
         fieldName,
         firstTimestamp
