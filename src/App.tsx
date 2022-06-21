@@ -11,7 +11,6 @@ import { NavigationButtons } from "./components/NavigationButtons";
 import { GasGraphDescription, StroomGraphDescription, WaterGraphDescription } from "./models/GraphDescription";
 import { padData } from "./helpers/padData";
 import { MeasurementEntry } from "./models/MeasurementEntry";
-import { RadialGraph } from "./components/charts/RadialChart";
 import { CarpetChart } from "./components/charts/CarpetChart";
 
 // import {     zonedTimeToUtc } from 'date-fns';
@@ -134,21 +133,6 @@ export const App = () => {
                 </Card>
             </div>
             <div className={styles.row}>
-                <Card>
-                    <CardTitle
-                        label="Water (radial)"
-                        firstTimestamp={labels[0]}
-                        labels={labels}
-                        graphDescription={waterGraphDescription}
-                        series={periodWaterData}
-                        fieldName="water"
-                    />
-                    <RadialGraph
-                        graphDescription={waterGraphDescription}
-                        series={radialData.map((entry) => entry.water)}
-                        fieldName={"water"}
-                    />
-                </Card>
                 <Card className={styles.wideCard}>
                     <CardTitle
                         label="Water (last month)"
