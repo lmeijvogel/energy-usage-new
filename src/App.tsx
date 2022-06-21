@@ -43,7 +43,7 @@ export const App = () => {
     }, [periodDescription, setPeriodGasData]);
 
     useEffect(() => {
-        fetch(`/api/radial_data/month`)
+        fetch("/api/radial_data/last_30_days")
             .then((response) => response.json())
             .then((data: MeasurementEntry[]) => {
                 setRadialData(data);
