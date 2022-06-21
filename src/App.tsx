@@ -135,14 +135,51 @@ export const App = () => {
             <div className={styles.row}>
                 <Card className={styles.wideCard}>
                     <CardTitle
-                        label="Water (last month)"
+                        label="Gas (last 30 days)"
+                        firstTimestamp={labels[0]}
+                        graphDescription={gasGraphDescription}
+                        series={periodGasData}
+                        fieldName="gas"
+                    />
+                    <CarpetChart
+                        className={styles.carpetChart}
+                        width={500}
+                        height={300}
+                        fieldName="gas"
+                        graphDescription={gasGraphDescription}
+                        periodDescription={MonthDescription.thisMonth()}
+                        entries={radialData}
+                    />
+                </Card>
+                <Card className={styles.wideCard}>
+                    <CardTitle
+                        label="Stroom (last 30 days)"
+                        firstTimestamp={labels[0]}
+                        graphDescription={stroomGraphDescription}
+                        series={periodStroomData}
+                        fieldName="stroom"
+                    />
+                    <CarpetChart
+                        className={styles.carpetChart}
+                        width={500}
+                        height={300}
+                        fieldName="stroom"
+                        graphDescription={stroomGraphDescription}
+                        periodDescription={MonthDescription.thisMonth()}
+                        entries={radialData}
+                    />
+                </Card>
+                <Card className={styles.wideCard}>
+                    <CardTitle
+                        label="Water (30 days)"
                         firstTimestamp={labels[0]}
                         graphDescription={waterGraphDescription}
                         series={periodWaterData}
                         fieldName="water"
                     />
                     <CarpetChart
-                        width={300}
+                        className={styles.carpetChart}
+                        width={500}
                         height={300}
                         fieldName="water"
                         graphDescription={waterGraphDescription}

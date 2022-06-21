@@ -8,5 +8,10 @@
 }
 
 .wideCard {
-    width: 600px;
+    width: 500px;
+}
+
+.carpetChart {
+    width: 500px;
+    height: 300px;
 }
