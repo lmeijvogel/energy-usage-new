@@ -12,6 +12,7 @@ import { GasGraphDescription, StroomGraphDescription, WaterGraphDescription } fr
 import { padData } from "./helpers/padData";
 import { MeasurementEntry } from "./models/MeasurementEntry";
 import { CarpetChart } from "./components/charts/CarpetChart";
+import { Row } from "./components/Row";
 
 // import {     zonedTimeToUtc } from 'date-fns';
 
@@ -73,7 +74,7 @@ export const App = () => {
             <div className={styles.row}>
                 <h1>{periodDescription.toTitle()}</h1>
             </div>
-            <div className={styles.row}>
+            <Row>
                 <Card>
                     <CardTitle
                         label="Gas"
@@ -131,8 +132,8 @@ export const App = () => {
                         graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
-            </div>
-            <div className={styles.row}>
+            </Row>
+            <Row>
                 <Card className={styles.wideCard}>
                     <CardTitle
                         label="Gas (last 30 days)"
@@ -187,7 +188,7 @@ export const App = () => {
                         entries={radialData}
                     />
                 </Card>
-            </div>
+            </Row>
             <NavigationButtons periodDescription={periodDescription} onSelect={setPeriodDescription} />
         </div>
     );

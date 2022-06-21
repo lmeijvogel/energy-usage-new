@@ -2,11 +2,6 @@
     width: 400px;
 }
 
-.row {
-    display: flex;
-    flex-direction: row;
-}
-
 .wideCard {
     width: 500px;
 }
