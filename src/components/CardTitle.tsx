@@ -7,22 +7,17 @@ import styles from "./CardTitle.module.css";
 
 type Props = {
     label: string;
-    labels: Date[];
+    firstTimestamp: Date;
     fieldName: UsageField;
     graphDescription: GraphDescription;
     series: number[];
 };
 
-export function CardTitle({ label, labels, fieldName, graphDescription, series }: Props) {
-    const firstTimestamp = labels[0];
+export function CardTitle({ label, firstTimestamp, fieldName, graphDescription, series }: Props) {
+    const actualValues = series.filter(isNotNull);
+    const totalUsage = actualValues.reduce((total, value) => total + value, 0);
 
-    function totalUsage() {
-        const actualValues = series.filter(isNotNull);
-
-        return actualValues.reduce((total, value) => total + value, 0);
-    }
-
-    const chartTitle = buildChartTitle(label, totalUsage(), fieldName, graphDescription, firstTimestamp);
+    const chartTitle = buildChartTitle(label, totalUsage, fieldName, graphDescription, firstTimestamp);
 
     return <h3 className={styles.title}>{chartTitle}</h3>;
 }

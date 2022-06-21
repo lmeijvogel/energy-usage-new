@@ -78,7 +78,7 @@ export const App = () => {
                 <Card>
                     <CardTitle
                         label="Gas"
-                        labels={labels}
+                        firstTimestamp={labels[0]}
                         graphDescription={gasGraphDescription}
                         series={periodGasData}
                         fieldName="gas"
@@ -97,7 +97,7 @@ export const App = () => {
                 <Card>
                     <CardTitle
                         label="Stroom"
-                        labels={labels}
+                        firstTimestamp={labels[0]}
                         graphDescription={stroomGraphDescription}
                         series={periodStroomData}
                         fieldName="stroom"
@@ -116,7 +116,7 @@ export const App = () => {
                 <Card>
                     <CardTitle
                         label="Water"
-                        labels={labels}
+                        firstTimestamp={labels[0]}
                         graphDescription={waterGraphDescription}
                         series={periodWaterData}
                         fieldName="water"
@@ -137,6 +137,7 @@ export const App = () => {
                 <Card>
                     <CardTitle
                         label="Water (radial)"
+                        firstTimestamp={labels[0]}
                         labels={labels}
                         graphDescription={waterGraphDescription}
                         series={periodWaterData}
@@ -151,7 +152,7 @@ export const App = () => {
                 <Card className={styles.wideCard}>
                     <CardTitle
                         label="Water (last month)"
-                        labels={labels}
+                        firstTimestamp={labels[0]}
                         graphDescription={waterGraphDescription}
                         series={periodWaterData}
                         fieldName="water"
