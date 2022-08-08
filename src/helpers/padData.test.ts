@@ -1,5 +1,5 @@
 import { addDays, addHours } from "date-fns";
-import { createMeasurementEntry, MeasurementEntry } from "../models/MeasurementEntry";
+import { MeasurementEntry } from "../models/MeasurementEntry";
 import { padData } from "./padData";
 
 describe("padData", () => {
@@ -17,9 +17,9 @@ describe("padData", () => {
         const add = (hours: number) => addHours(date, hours);
 
         const data: MeasurementEntry[] = [
-            createMeasurementEntry({ stroom: 12 }, add(2)),
-            createMeasurementEntry({ stroom: 15 }, add(5)),
-            createMeasurementEntry({ stroom: 10 }, add(10))
+            { timestamp: add(2), value: 12 },
+            { timestamp: add(5), value: 15 },
+            { timestamp: add(10), value: 10 }
         ];
 
         const paddedData = padData(data, new Date(2022, 2, 2), "day");
@@ -55,12 +55,13 @@ describe("padData", () => {
 
         expected.forEach(([hour, value], i) => {
             const currentElement = paddedData[i];
+            const date = currentElement.timestamp;
 
-            expect(currentElement.day).toEqual(2);
-            expect(currentElement.month).toEqual(2);
-            expect(currentElement.year).toEqual(2022);
-            expect(currentElement.hour).toEqual(hour);
-            expect(currentElement.stroom).toEqual(value);
+            expect(date.getDate()).toEqual(2);
+            expect(date.getMonth()).toEqual(2);
+            expect(date.getFullYear()).toEqual(2022);
+            expect(date.getHours()).toEqual(hour);
+            expect(currentElement.value).toEqual(value);
         });
     });
 
@@ -70,9 +71,9 @@ describe("padData", () => {
         const add = (days: number) => addDays(date, days);
 
         const data: MeasurementEntry[] = [
-            createMeasurementEntry({ stroom: 12 }, add(2)),
-            createMeasurementEntry({ stroom: 15 }, add(5)),
-            createMeasurementEntry({ stroom: 10 }, add(10))
+            { timestamp: add(2), value: 12 },
+            { timestamp: add(5), value: 15 },
+            { timestamp: add(10), value: 10 }
         ];
 
         const paddedData = padData(data, date, "month");
@@ -110,14 +111,14 @@ describe("padData", () => {
 
         expect(paddedData.length).toEqual(28);
 
-        for (let i = 0; i < 28; i++) {}
         expected.forEach(([day, value], i) => {
             const currentElement = paddedData[i];
+            const date = currentElement.timestamp;
 
-            expect(currentElement.day).toEqual(day);
-            expect(currentElement.month).toEqual(1);
-            expect(currentElement.year).toEqual(2022);
-            expect(currentElement.stroom).toEqual(value);
+            expect(date.getDate()).toEqual(day);
+            expect(date.getMonth()).toEqual(1);
+            expect(date.getFullYear()).toEqual(2022);
+            expect(currentElement.value).toEqual(value);
         });
     });
 });
@@ -126,7 +127,7 @@ function generateCompleteDayData(): MeasurementEntry[] {
     let result: MeasurementEntry[] = [];
 
     for (let hour = 0; hour < 24; hour++) {
-        result.push(createMeasurementEntry({}, new Date(2022, 2, 2, hour, 0, 0)));
+        result.push({ timestamp: new Date(2022, 2, 2, hour, 0, 0), value: 0 });
     }
 
     return result;

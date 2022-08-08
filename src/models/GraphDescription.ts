@@ -74,7 +74,7 @@ function range(start: number, end: number): number[] {
 }
 
 export class GasGraphDescription extends GraphDescription {
-    readonly barColor = "#e73711";
+    readonly barColor = "#e73710";
     readonly fieldName = "gas";
 
     readonly displayableUnit = "m³";
@@ -84,9 +84,9 @@ export class GasGraphDescription extends GraphDescription {
             case "year":
                 return 400;
             case "month":
-                return 20;
+                return 12;
             case "day":
-                return 3;
+                return 1;
             default:
                 return assertNever(this.periodSize);
         }

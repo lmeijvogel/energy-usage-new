@@ -6,50 +6,60 @@ import { DayDescription, MonthDescription, PeriodDescription, YearDescription } 
 
 import styles from "./App.module.css";
 import { Card } from "./components/Card";
-import { CardTitle } from "./components/CardTitle";
+import { buildUsageCardTitle, CardTitle } from "./components/CardTitle";
 import { NavigationButtons } from "./components/NavigationButtons";
 import { GasGraphDescription, StroomGraphDescription, WaterGraphDescription } from "./models/GraphDescription";
 import { padData } from "./helpers/padData";
 import { MeasurementEntry } from "./models/MeasurementEntry";
 import { CarpetChart } from "./components/charts/CarpetChart";
 import { Row } from "./components/Row";
+import { LineChart } from "./components/charts/LineChart";
 
-// import {     zonedTimeToUtc } from 'date-fns';
+export type MeasurementResponse = [timestampString: string, value: number];
 
 export const App = () => {
-    const [periodGasData, setPeriodGasData] = useState<number[]>([]);
-    const [periodStroomData, setPeriodStroomData] = useState<number[]>([]);
-    const [periodWaterData, setPeriodWaterData] = useState<number[]>([]);
+    const [periodGasData, setPeriodGasData] = useState<MeasurementEntry[]>([]);
+    const [periodStroomData, setPeriodStroomData] = useState<MeasurementEntry[]>([]);
+    const [periodWaterData, setPeriodWaterData] = useState<MeasurementEntry[]>([]);
 
     const [radialData, setRadialData] = useState<MeasurementEntry[]>([]);
 
-    const [labels, setLabels] = useState<Date[]>([]);
-
-    // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new MonthDescription(2022, 3));
-    // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new YearDescription(2021));
-    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(new DayDescription(2022, 5, 1));
+    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today().previous());
     useEffect(() => {
         const url = periodDescription.toUrl();
 
-        fetch(`/api/${url}`)
+        fetch(`/api/gas${url}`)
             .then((response) => response.json())
-            .then((json) => padData(json, periodDescription.startOfPeriod(), periodDescription.periodSize))
-            .then((data: MeasurementEntry[]) => {
-                console.log({ data });
-                setLabels(data.map((row) => new Date(row.year, row.month + 1, row.day)));
-                setPeriodGasData(data.map((row) => row.gas));
-                setPeriodStroomData(data.map((row) => row.stroom));
-                setPeriodWaterData(data.map((row) => row.water));
-            });
-    }, [periodDescription, setPeriodGasData]);
+            .then((json) => json.map(parseResponseRow))
+            .then((data: MeasurementEntry[]) =>
+                padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize)
+            )
+            .then(setPeriodGasData);
 
-    useEffect(() => {
-        fetch("/api/radial_data/last_30_days")
+        fetch(`/api/stroom${url}`)
             .then((response) => response.json())
-            .then((data: MeasurementEntry[]) => {
-                setRadialData(data);
-            });
-    }, []);
+            .then((json) => json.map(parseResponseRow))
+            .then((data: MeasurementEntry[]) =>
+                padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize)
+            )
+            .then(setPeriodStroomData);
+
+        fetch(`/api/water${url}`)
+            .then((response) => response.json())
+            .then((json) => json.map(parseResponseRow))
+            .then((data: MeasurementEntry[]) =>
+                padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize)
+            )
+            .then(setPeriodWaterData);
+    }, [periodDescription, setPeriodGasData, setPeriodStroomData, setPeriodStroomData]);
+
+    // useEffect(() => {
+    // fetch("/api/radial_data/last_30_days")
+    // .then((response) => response.json())
+    // .then((data: MeasurementEntry[]) => {
+    // setRadialData(data);
+    // });
+    // }, []);
 
     const choosePeriod = (index: number) => {
         const newPeriod = periodDescription.atIndex(index);
@@ -75,58 +85,61 @@ export const App = () => {
                 <h1>{periodDescription.toTitle()}</h1>
             </div>
             <Row>
-                <Card>
-                    <CardTitle
-                        label="Gas"
-                        firstTimestamp={labels[0]}
-                        graphDescription={gasGraphDescription}
-                        series={periodGasData}
-                        fieldName="gas"
-                    />
+                <Card
+                    title={buildUsageCardTitle(
+                        "Gas",
+                        periodDescription.startOfPeriod(),
+                        gasGraphDescription,
+                        periodGasData,
+                        "gas"
+                    )}
+                >
                     <BarChart
                         label="Gas"
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
                         graphDescription={gasGraphDescription}
-                        series={periodGasData}
+                        series={periodGasData.map((el) => el.value)}
                         onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
-                <Card>
-                    <CardTitle
-                        label="Stroom"
-                        firstTimestamp={labels[0]}
-                        graphDescription={stroomGraphDescription}
-                        series={periodStroomData}
-                        fieldName="stroom"
-                    />
+                <Card
+                    title={buildUsageCardTitle(
+                        "Stroom",
+                        periodDescription.startOfPeriod(),
+                        stroomGraphDescription,
+                        periodStroomData,
+                        "stroom"
+                    )}
+                >
                     <BarChart
                         label="Stroom"
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
                         graphDescription={stroomGraphDescription}
-                        series={periodStroomData}
+                        series={periodStroomData.map((el) => el.value)}
                         onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
-                <Card>
-                    <CardTitle
-                        label="Water"
-                        firstTimestamp={labels[0]}
-                        graphDescription={waterGraphDescription}
-                        series={periodWaterData}
-                        fieldName="water"
-                    />
+                <Card
+                    title={buildUsageCardTitle(
+                        "Water",
+                        periodDescription.startOfPeriod(),
+                        waterGraphDescription,
+                        periodWaterData,
+                        "water"
+                    )}
+                >
                     <BarChart
                         label="Water"
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
                         graphDescription={waterGraphDescription}
-                        series={periodWaterData}
+                        series={periodWaterData.map((el) => el.value)}
                         onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}
@@ -134,14 +147,7 @@ export const App = () => {
                 </Card>
             </Row>
             <Row>
-                <Card className={styles.wideCard}>
-                    <CardTitle
-                        label="Gas (last 30 days)"
-                        firstTimestamp={labels[0]}
-                        graphDescription={gasGraphDescription}
-                        series={periodGasData}
-                        fieldName="gas"
-                    />
+                <Card className={styles.wideCard} title="Gas (last 30 days)">
                     <CarpetChart
                         className={styles.carpetChart}
                         width={500}
@@ -152,14 +158,7 @@ export const App = () => {
                         entries={radialData}
                     />
                 </Card>
-                <Card className={styles.wideCard}>
-                    <CardTitle
-                        label="Stroom (last 30 days)"
-                        firstTimestamp={labels[0]}
-                        graphDescription={stroomGraphDescription}
-                        series={periodStroomData}
-                        fieldName="stroom"
-                    />
+                <Card className={styles.wideCard} title="Stroom (last 30 days)">
                     <CarpetChart
                         className={styles.carpetChart}
                         width={500}
@@ -170,14 +169,7 @@ export const App = () => {
                         entries={radialData}
                     />
                 </Card>
-                <Card className={styles.wideCard}>
-                    <CardTitle
-                        label="Water (30 days)"
-                        firstTimestamp={labels[0]}
-                        graphDescription={waterGraphDescription}
-                        series={periodWaterData}
-                        fieldName="water"
-                    />
+                <Card className={styles.wideCard} title="Water (30 days)">
                     <CarpetChart
                         className={styles.carpetChart}
                         width={500}
@@ -189,14 +181,18 @@ export const App = () => {
                     />
                 </Card>
             </Row>
+            <Row>
+                <LineChart />
+            </Row>
             <NavigationButtons periodDescription={periodDescription} onSelect={setPeriodDescription} />
         </div>
     );
 };
 
-function round(v: number, decimals: number): number {
-    const factor = 10 ** decimals;
-    return Math.round(v * factor) / factor;
+function parseResponseRow(row: MeasurementResponse): MeasurementEntry {
+    return {
+        timestamp: new Date(Date.parse(row[0])),
+        value: row[1]
+    };
 }
-
 export default App;

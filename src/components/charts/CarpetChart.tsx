@@ -1,14 +1,12 @@
 import classNames from "classnames";
 import * as d3 from "d3";
-import { add, format, getDaysInMonth, isSaturday, isSunday, isWeekend } from "date-fns";
+import { format, isSaturday, isSunday } from "date-fns";
 
 import { useEffect } from "react";
 import { GraphDescription } from "../../models/GraphDescription";
 import { MeasurementEntry } from "../../models/MeasurementEntry";
 import { PeriodDescription } from "../../models/PeriodDescription";
 import { UsageField } from "../../models/UsageData";
-
-import styles from "./CarpetChart.module.css";
 
 type Props = {
     className?: string;
@@ -42,7 +40,7 @@ export function CarpetChart({
     }, [entries]);
 
     const drawGraph = (entries: MeasurementEntry[]) => {
-        const data = entries.map((value) => truncate(value[fieldName], 3));
+        const data = entries.map((entry) => truncate(entry.value, 3));
 
         const max: number = Math.max(...data.filter(isDefined));
 
@@ -70,8 +68,6 @@ export function CarpetChart({
             .attr("stroke", borderGrey)
             .attr("stroke-width", "1px");
 
-        const maxData = d3.max(data) ?? 0;
-
         // TODO: Maybe there's another usage as well, maybe "year" with an entry for each day? :D
         if (periodDescription.periodSize === "month") {
             let lastDate: number | undefined;
@@ -79,21 +75,21 @@ export function CarpetChart({
             let column = -1;
 
             for (const entry of entries) {
-                if (entry.day !== lastDate) {
+                if (entry.timestamp.getDate() !== lastDate) {
                     column++;
 
                     dayContainer = graph.append("g");
 
-                    const date = new Date(entry.year, entry.month - 1, entry.day);
+                    const date = entry.timestamp;
                     if (isSaturday(date)) {
                         drawWeekendMarker(column, "saturday", dayContainer);
                     } else if (isSunday(date)) {
                         drawWeekendMarker(column, "sunday", dayContainer);
                     }
-                    lastDate = entry.day;
+                    lastDate = entry.timestamp.getDate();
                 }
 
-                drawSquare(entry, fieldName, column, colorScale, dayContainer!);
+                drawSquare(entry, column, colorScale, dayContainer!);
             }
         }
     };
@@ -118,24 +114,25 @@ export function CarpetChart({
 
     const drawSquare = (
         entry: MeasurementEntry,
-        fieldName: UsageField,
         column: number,
         colorScale: d3.ScaleLinear<number, number, never>,
         container: d3.Selection<SVGGElement, unknown, HTMLElement, any>
     ) => {
-        const value = entry[fieldName];
+        const value = entry.value;
         const color = !!value ? colorScale(value) : "white";
+
+        const timestamp = entry.timestamp;
 
         container
             .append("rect")
             .attr("x", padding + column * cellWidth + dayPadding)
-            .attr("y", padding + entry.hour * cellHeight + dayPadding)
+            .attr("y", padding + timestamp.getHours() * cellHeight + dayPadding)
             .attr("width", cellWidth - 2 * dayPadding)
             .attr("height", cellHeight - 2 * dayPadding)
             .attr("fill", color)
             .on("mouseenter", (event: any) => showTooltip(event, entry, value, graphDescription))
             .on("mouseleave", hideTooltip)
-            .attr("title", `${entry.day}-${entry.month} ${entry.hour}:00 ${value}`);
+            .attr("title", `${timestamp.getDate()}-${timestamp.getMonth()} ${timestamp.getHours()}:00 ${value}`);
         // .attr("stroke-width", dataIsZero ? 0.5 : 0)
         // .attr("stroke", "#888");
     };
@@ -150,9 +147,9 @@ export function CarpetChart({
 }
 
 function showTooltip(event: any, entry: MeasurementEntry, value: number, graphDescription: GraphDescription) {
-    const date = new Date(entry.year, entry.month - 1, entry.day, entry.hour);
+    const timestamp = entry.timestamp;
 
-    const dateString = format(date, "eee yyyy-MM-dd HH:00");
+    const dateString = format(timestamp, "eee yyyy-MM-dd HH:00");
     const contents = `${dateString}<br />value: <b>${d3.format(".2f")(value)}</b> ${graphDescription.displayableUnit}`;
 
     const tooltip = d3.select("#tooltip");

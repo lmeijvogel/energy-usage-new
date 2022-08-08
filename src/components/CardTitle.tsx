@@ -1,6 +1,6 @@
 import { costsFor, PriceCategory } from "../helpers/PriceCalculator";
-import { assertNever } from "../lib/assertNever";
 import { GraphDescription } from "../models/GraphDescription";
+import { MeasurementEntry } from "../models/MeasurementEntry";
 import { UsageField } from "../models/UsageData";
 
 import styles from "./CardTitle.module.css";
@@ -12,6 +12,21 @@ type Props = {
     graphDescription: GraphDescription;
     series: number[];
 };
+
+export function buildUsageCardTitle(
+    label: string,
+    firstTimestamp: Date,
+    graphDescription: GraphDescription,
+    series: MeasurementEntry[],
+    fieldName: UsageField
+) {
+    const actualValues = series.filter(isNotNull);
+    const totalUsage = actualValues.reduce((total, entry) => total + entry.value, 0);
+
+    const chartTitle = buildChartTitle(label, totalUsage, fieldName, graphDescription, firstTimestamp);
+
+    return chartTitle;
+}
 
 export function CardTitle({ label, firstTimestamp, fieldName, graphDescription, series }: Props) {
     const actualValues = series.filter(isNotNull);
