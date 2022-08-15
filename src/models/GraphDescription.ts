@@ -95,6 +95,7 @@ export class GasGraphDescription extends GraphDescription {
 
 export class StroomGraphDescription extends GraphDescription {
     readonly barColor = "#f0ad4e";
+    readonly lightColor = "#ffddad";
     readonly fieldName = "stroom";
     readonly displayableUnit = "kWh";
 

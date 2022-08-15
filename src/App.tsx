@@ -6,7 +6,7 @@ import { DayDescription, MonthDescription, PeriodDescription, YearDescription } 
 
 import styles from "./App.module.css";
 import { Card } from "./components/Card";
-import { buildUsageCardTitle, CardTitle } from "./components/CardTitle";
+import { buildUsageCardTitle } from "./components/CardTitle";
 import { NavigationButtons } from "./components/NavigationButtons";
 import { GasGraphDescription, StroomGraphDescription, WaterGraphDescription } from "./models/GraphDescription";
 import { padData } from "./helpers/padData";
@@ -14,6 +14,7 @@ import { MeasurementEntry } from "./models/MeasurementEntry";
 import { CarpetChart } from "./components/charts/CarpetChart";
 import { Row } from "./components/Row";
 import { LineChart } from "./components/charts/LineChart";
+import { UsageField } from "./models/UsageData";
 
 export type MeasurementResponse = [timestampString: string, value: number];
 
@@ -24,42 +25,45 @@ export const App = () => {
 
     const [radialData, setRadialData] = useState<MeasurementEntry[]>([]);
 
+    const [recentPowerUsage, setRecentPowerUsage] = useState<any[]>([]);
+    const [currentPowerUsageWatts, setCurrentPowerUsageWatts] = useState<number>(0);
+
     const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today().previous());
     useEffect(() => {
-        const url = periodDescription.toUrl();
+        fetchData("gas", periodDescription).then(setPeriodGasData);
 
-        fetch(`/api/gas${url}`)
+        fetchData("stroom", periodDescription).then(setPeriodStroomData);
+
+        fetchData("water", periodDescription).then(setPeriodWaterData);
+    }, [periodDescription, setPeriodGasData, setPeriodStroomData, setPeriodWaterData]);
+
+    useEffect(() => {
+        fetch("/api/water/last_30_days")
             .then((response) => response.json())
             .then((json) => json.map(parseResponseRow))
-            .then((data: MeasurementEntry[]) =>
-                padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize)
-            )
-            .then(setPeriodGasData);
+            .then((data: MeasurementEntry[]) => {
+                setRadialData(data);
+            });
+    }, []);
 
-        fetch(`/api/stroom${url}`)
-            .then((response) => response.json())
-            .then((json) => json.map(parseResponseRow))
-            .then((data: MeasurementEntry[]) =>
-                padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize)
-            )
-            .then(setPeriodStroomData);
+    useEffect(() => {
+        const updatePowerUsage = () => {
+            fetch("/api/stroom/recent")
+                .then((response) => response.json())
+                .then((json) => json.map(parseResponseRow))
+                .then((data: MeasurementEntry[]) => {
+                    setRecentPowerUsage(data);
 
-        fetch(`/api/water${url}`)
-            .then((response) => response.json())
-            .then((json) => json.map(parseResponseRow))
-            .then((data: MeasurementEntry[]) =>
-                padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize)
-            )
-            .then(setPeriodWaterData);
-    }, [periodDescription, setPeriodGasData, setPeriodStroomData, setPeriodStroomData]);
+                    setCurrentPowerUsageWatts(data.length > 0 ? data[0].value * 1000 : 0);
+                });
+        };
 
-    // useEffect(() => {
-    // fetch("/api/radial_data/last_30_days")
-    // .then((response) => response.json())
-    // .then((data: MeasurementEntry[]) => {
-    // setRadialData(data);
-    // });
-    // }, []);
+        updatePowerUsage();
+
+        const interval = setInterval(() => updatePowerUsage(), 15 * 1000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     const choosePeriod = (index: number) => {
         const newPeriod = periodDescription.atIndex(index);
@@ -182,12 +186,34 @@ export const App = () => {
                 </Card>
             </Row>
             <Row>
-                <LineChart />
+                <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
+                    <LineChart
+                        label="Stroom"
+                        className={styles.mainGraph}
+                        periodDescription={periodDescription}
+                        graphDescription={stroomGraphDescription}
+                        valuesWithTimestamp={recentPowerUsage}
+                        onBarClick={choosePeriod}
+                        tooltipLabelBuilder={toString}
+                        graphTickPositions={periodDescription.graphTickPositions}
+                    />
+                </Card>
             </Row>
             <NavigationButtons periodDescription={periodDescription} onSelect={setPeriodDescription} />
         </div>
     );
 };
+
+async function fetchData(fieldName: UsageField, periodDescription: PeriodDescription): Promise<MeasurementEntry[]> {
+    const url = periodDescription.toUrl();
+
+    const response = await fetch(`/api/${fieldName}${url}`);
+    const json = await response.json();
+    const data = json.map(parseResponseRow);
+    const paddedData = padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize);
+
+    return paddedData;
+}
 
 function parseResponseRow(row: MeasurementResponse): MeasurementEntry {
     return {
