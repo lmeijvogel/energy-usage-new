@@ -23,7 +23,9 @@ export const App = () => {
     const [periodStroomData, setPeriodStroomData] = useState<MeasurementEntry[]>([]);
     const [periodWaterData, setPeriodWaterData] = useState<MeasurementEntry[]>([]);
 
-    const [radialData, setRadialData] = useState<MeasurementEntry[]>([]);
+    const [carpetGasData, setCarpetGasData] = useState<MeasurementEntry[]>([]);
+    const [carpetStroomData, setCarpetStroomData] = useState<MeasurementEntry[]>([]);
+    const [carpetWaterData, setCarpetWaterData] = useState<MeasurementEntry[]>([]);
 
     const [recentPowerUsage, setRecentPowerUsage] = useState<any[]>([]);
     const [currentPowerUsageWatts, setCurrentPowerUsageWatts] = useState<number>(0);
@@ -38,12 +40,9 @@ export const App = () => {
     }, [periodDescription, setPeriodGasData, setPeriodStroomData, setPeriodWaterData]);
 
     useEffect(() => {
-        fetch("/api/water/last_30_days")
-            .then((response) => response.json())
-            .then((json) => json.map(parseResponseRow))
-            .then((data: MeasurementEntry[]) => {
-                setRadialData(data);
-            });
+        fetchCarpetData("gas").then(setCarpetGasData);
+        fetchCarpetData("stroom").then(setCarpetStroomData);
+        fetchCarpetData("water").then(setCarpetWaterData);
     }, []);
 
     useEffect(() => {
@@ -159,7 +158,7 @@ export const App = () => {
                         fieldName="gas"
                         graphDescription={gasGraphDescription}
                         periodDescription={MonthDescription.thisMonth()}
-                        entries={radialData}
+                        entries={carpetGasData}
                     />
                 </Card>
                 <Card className={styles.wideCard} title="Stroom (last 30 days)">
@@ -170,7 +169,7 @@ export const App = () => {
                         fieldName="stroom"
                         graphDescription={stroomGraphDescription}
                         periodDescription={MonthDescription.thisMonth()}
-                        entries={radialData}
+                        entries={carpetStroomData}
                     />
                 </Card>
                 <Card className={styles.wideCard} title="Water (30 days)">
@@ -181,7 +180,7 @@ export const App = () => {
                         fieldName="water"
                         graphDescription={waterGraphDescription}
                         periodDescription={MonthDescription.thisMonth()}
-                        entries={radialData}
+                        entries={carpetWaterData}
                     />
                 </Card>
             </Row>
@@ -215,6 +214,11 @@ async function fetchData(fieldName: UsageField, periodDescription: PeriodDescrip
     return paddedData;
 }
 
+async function fetchCarpetData(fieldName: UsageField): Promise<MeasurementEntry[]> {
+    return fetch(`/api/${fieldName}/last_30_days`)
+        .then((response) => response.json())
+        .then((json) => json.map(parseResponseRow));
+}
 function parseResponseRow(row: MeasurementResponse): MeasurementEntry {
     return {
         timestamp: new Date(Date.parse(row[0])),

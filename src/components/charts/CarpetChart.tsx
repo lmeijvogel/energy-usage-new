@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import * as d3 from "d3";
-import { format, isSaturday, isSunday } from "date-fns";
+import { addHours, format, isSaturday, isSunday, set, subMinutes } from "date-fns";
 
 import { useEffect } from "react";
 import { GraphDescription } from "../../models/GraphDescription";
@@ -29,8 +29,9 @@ export function CarpetChart({
     graphDescription
 }: Props) {
     const padding = 30;
+    const axisWidth = 40;
 
-    const cellWidth = (width - 2 * padding) / 31;
+    const cellWidth = (width - 2 * padding - axisWidth) / 31;
     const cellHeight = (height - 2 * padding) / 24;
 
     const dayPadding = 1;
@@ -60,13 +61,31 @@ export function CarpetChart({
 
         graph
             .append("rect")
-            .attr("x", padding)
+            .attr("x", padding + axisWidth)
             .attr("y", padding)
-            .attr("width", width - 2 * padding)
+            .attr("width", width - 2 * padding - axisWidth)
             .attr("height", height - 2 * padding)
             .attr("fill", "none")
             .attr("stroke", borderGrey)
             .attr("stroke-width", "1px");
+
+        const axisContainer = graph
+            .append("g")
+            .attr("transform", `translate(${padding + axisWidth}, 0)`)
+            .style("font-size", "10pt");
+
+        const now = new Date();
+        const startOfDay = subMinutes(set(now, { hours: 0, minutes: 0, seconds: 0 }), 1);
+        const endOfDay = set(now, { hours: 24, minutes: 0, seconds: 0 });
+
+        const scaleY = d3
+            .scaleTime()
+            .domain([startOfDay, endOfDay])
+            .range([height - padding, padding]);
+
+        const xAxis = d3.axisLeft(scaleY).ticks(d3.timeHour.every(3), d3.timeFormat("%H:%M"));
+
+        axisContainer.call(xAxis);
 
         // TODO: Maybe there's another usage as well, maybe "year" with an entry for each day? :D
         if (periodDescription.periodSize === "month") {
@@ -89,7 +108,7 @@ export function CarpetChart({
                     lastDate = entry.timestamp.getDate();
                 }
 
-                drawSquare(entry, column, colorScale, dayContainer!);
+                drawSquare(entry, column, colorScale, scaleY, dayContainer!);
             }
         }
     };
@@ -99,7 +118,7 @@ export function CarpetChart({
         day: "saturday" | "sunday",
         dayContainer: d3.Selection<SVGGElement, unknown, HTMLElement, any>
     ) => {
-        let startX = padding + column * cellWidth;
+        let startX = padding + axisWidth + column * cellWidth;
 
         if (day === "sunday") {
             startX += cellWidth;
@@ -116,23 +135,37 @@ export function CarpetChart({
         entry: MeasurementEntry,
         column: number,
         colorScale: d3.ScaleLinear<number, number, never>,
+        scaleY: d3.ScaleTime<number, number, never>,
         container: d3.Selection<SVGGElement, unknown, HTMLElement, any>
     ) => {
         const value = entry.value;
         const color = !!value ? colorScale(value) : "white";
 
-        const timestamp = entry.timestamp;
+        const now = new Date();
 
+        const timestampMappedToToday = set(entry.timestamp, {
+            year: now.getFullYear(),
+            month: now.getMonth(),
+            date: now.getDate()
+        });
+
+        /* Add 1 hour to the y scale value, since the graph is read from bottom to top.
+         * For example, the square for hour 1 to 2 is received as hour 1. We must draw it from the top down,
+         * so that would be hour 2.
+         */
         container
             .append("rect")
-            .attr("x", padding + column * cellWidth + dayPadding)
-            .attr("y", padding + timestamp.getHours() * cellHeight + dayPadding)
+            .attr("x", padding + axisWidth + column * cellWidth + dayPadding)
+            .attr("y", scaleY(addHours(timestampMappedToToday, 1)))
             .attr("width", cellWidth - 2 * dayPadding)
             .attr("height", cellHeight - 2 * dayPadding)
             .attr("fill", color)
             .on("mouseenter", (event: any) => showTooltip(event, entry, value, graphDescription))
             .on("mouseleave", hideTooltip)
-            .attr("title", `${timestamp.getDate()}-${timestamp.getMonth()} ${timestamp.getHours()}:00 ${value}`);
+            .attr(
+                "title",
+                `${timestampMappedToToday.getDate()}-${timestampMappedToToday.getMonth()} ${timestampMappedToToday.getHours()}:00 ${value}`
+            );
         // .attr("stroke-width", dataIsZero ? 0.5 : 0)
         // .attr("stroke", "#888");
     };
