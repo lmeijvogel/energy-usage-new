@@ -23,34 +23,66 @@ import { UsageField } from "./models/UsageData";
 export type MeasurementResponse = [timestampString: string, value: number];
 export type MinMaxMeasurementResponse = [timestampString: string, minValue: number, maxValue: number];
 
+function usePeriodData(fieldName: UsageField, periodDescription: PeriodDescription) {
+    const [periodData, setPeriodData] = useState<MeasurementEntry[]>([]);
+
+    useEffect(() => {
+        fetchPeriodData(fieldName, periodDescription).then(setPeriodData);
+    }, [periodDescription, setPeriodData]);
+
+    return [periodData];
+}
+
+async function fetchPeriodData(
+    fieldName: UsageField,
+    periodDescription: PeriodDescription
+): Promise<MeasurementEntry[]> {
+    const url = periodDescription.toUrl();
+
+    const response = await fetch(`/api/${fieldName}${url}`);
+    const json = await response.json();
+    const data = json.map(parseResponseRow);
+    const paddedData = padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize);
+
+    return paddedData;
+}
+
+function useCarpetData(fieldName: UsageField) {
+    const [carpetData, setCarpetData] = useState<MeasurementEntry[]>([]);
+
+    useEffect(() => {
+        fetchCarpetData(fieldName).then(setCarpetData);
+    }, []);
+
+    return [carpetData];
+}
+
+async function fetchCarpetData(fieldName: UsageField): Promise<MeasurementEntry[]> {
+    return fetch(`/api/${fieldName}/last_30_days`)
+        .then((response) => response.json())
+        .then((json) => json.map(parseResponseRow));
+}
+
 export const App = () => {
-    const [periodGasData, setPeriodGasData] = useState<MeasurementEntry[]>([]);
-    const [periodStroomData, setPeriodStroomData] = useState<MeasurementEntry[]>([]);
-    const [periodWaterData, setPeriodWaterData] = useState<MeasurementEntry[]>([]);
+    // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today().previous());
+    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(
+        MonthDescription.thisMonth().previous()
+    );
+
+    const [periodGasData] = usePeriodData("gas", periodDescription);
+    const [periodStroomData] = usePeriodData("stroom", periodDescription);
+    const [periodWaterData] = usePeriodData("water", periodDescription);
 
     const [livingRoomTemperatureData, setLivingRoomTemperatureData] = useState<Map<string, MeasurementEntry[]>>(
         new Map()
     );
 
-    const [carpetGasData, setCarpetGasData] = useState<MeasurementEntry[]>([]);
-    const [carpetStroomData, setCarpetStroomData] = useState<MeasurementEntry[]>([]);
-    const [carpetWaterData, setCarpetWaterData] = useState<MeasurementEntry[]>([]);
+    const [carpetGasData] = useCarpetData("gas");
+    const [carpetStroomData] = useCarpetData("stroom");
+    const [carpetWaterData] = useCarpetData("water");
 
     const [recentPowerUsageData, setRecentPowerUsageData] = useState<Map<string, MeasurementEntry[]>>(new Map());
     const [currentPowerUsageWatts, setCurrentPowerUsageWatts] = useState<number>(0);
-
-    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today().previous());
-    useEffect(() => {
-        fetchData("gas", periodDescription).then(setPeriodGasData);
-        fetchData("stroom", periodDescription).then(setPeriodStroomData);
-        fetchData("water", periodDescription).then(setPeriodWaterData);
-    }, [periodDescription, setPeriodGasData, setPeriodStroomData, setPeriodWaterData]);
-
-    useEffect(() => {
-        fetchCarpetData("gas").then(setCarpetGasData);
-        fetchCarpetData("stroom").then(setCarpetStroomData);
-        fetchCarpetData("water").then(setCarpetWaterData);
-    }, []);
 
     useEffect(() => {
         fetchTemperatureData(periodDescription).then(setLivingRoomTemperatureData);
@@ -231,23 +263,6 @@ export const App = () => {
         </div>
     );
 };
-
-async function fetchData(fieldName: UsageField, periodDescription: PeriodDescription): Promise<MeasurementEntry[]> {
-    const url = periodDescription.toUrl();
-
-    const response = await fetch(`/api/${fieldName}${url}`);
-    const json = await response.json();
-    const data = json.map(parseResponseRow);
-    const paddedData = padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize);
-
-    return paddedData;
-}
-
-async function fetchCarpetData(fieldName: UsageField): Promise<MeasurementEntry[]> {
-    return fetch(`/api/${fieldName}/last_30_days`)
-        .then((response) => response.json())
-        .then((json) => json.map(parseResponseRow));
-}
 
 async function fetchTemperatureData(periodDescription: PeriodDescription): Promise<Map<string, MeasurementEntry[]>> {
     const url = periodDescription.toUrl();
