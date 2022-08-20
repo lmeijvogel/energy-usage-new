@@ -7,16 +7,12 @@ type SpecificProps = {
 };
 
 export class BarChart extends ChartWithAxes<SpecificProps> {
+    protected readonly scaleX: d3.ScaleTime<number, number, never> | d3.ScaleBand<number>;
+
     constructor(props: ChartWithAxesProps & SpecificProps) {
         super(props);
-    }
 
-    override get elementCount() {
-        return this.props.series.length;
-    }
-
-    override initializeScaleX() {
-        return d3.scaleBand<number>().padding(0.15);
+        this.scaleX = d3.scaleBand<number>().padding(0.15);
     }
 
     override get elementId() {
@@ -72,32 +68,39 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
          * scale to do that: I can't persuade an xAxis based on a band scale to put the ticks
          * between the bands.
          */
-        const scaleXForXAxis = d3
-            .scaleLinear()
-            .domain([0, this.elementCount])
-            .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
 
-        let xAxis: any;
-        if (this.props.graphTickPositions === "on_value") {
-            xAxis = d3
-                .axisBottom(this.scaleX as any)
-                .tickValues(this.props.graphDescription.displayedTickIndices)
-                .tickFormat((n: any) => this.props.periodDescription.formatTick(n as number));
-        } else {
-            xAxis = d3.axisBottom(scaleXForXAxis).tickSizeOuter(0);
+        // Sadly, I also can't use the same logic as in the LineChart here, by using
+        // scaleTime and using .ticks(), since bandScale does not support .ticks().
+        const { graphDescription, graphTickPositions, periodDescription } = this.props;
+
+        let domain = [periodDescription.startOfPeriod(), periodDescription.endOfPeriod()];
+
+        if (graphTickPositions === "on_value") {
+            domain = domain.map(periodDescription.shiftHalfTick);
         }
 
-        const renderedXAxis = xAxisBase.call(xAxis).selectAll("text").style("font-size", "13pt");
+        const scaleXForXAxis = d3
+            .scaleTime()
+            .domain(domain)
+            .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
 
-        if (this.props.graphDescription.hasTextLabels) {
-            renderedXAxis
+        const ticks = periodDescription.getChartTicks();
+        const xAxis = d3
+            .axisBottom(scaleXForXAxis)
+            .ticks(ticks, d3.timeFormat(periodDescription.timeFormatString()))
+            .tickSizeOuter(0);
+
+        const renderedXAxisLabels = xAxisBase.call(xAxis).selectAll("text").style("font-size", "13pt");
+
+        if (graphDescription.hasTextLabels) {
+            renderedXAxisLabels
                 .style("text-anchor", "end")
                 .attr("dy", "-.2em")
                 .attr("dx", "-1em")
                 .attr("transform", "rotate(-65)");
         } else {
             // Got the 0.71em from the browser
-            renderedXAxis.style("text-anchor", null).attr("dy", "0.71em").attr("transform", null);
+            renderedXAxisLabels.style("text-anchor", null).attr("dy", "0.71em").attr("transform", null);
         }
     }
 

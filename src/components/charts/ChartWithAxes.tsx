@@ -22,7 +22,6 @@ export type ChartWithAxesProps = {
 
 export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProps & T> {
     protected abstract get elementId(): string;
-    protected abstract get elementCount(): number;
 
     readonly width = 480;
     readonly height = 240;
@@ -47,7 +46,6 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
      */
     // private readonly scaleXForInversion: d3.ScaleLinear<number, number, never>;
 
-    protected readonly scaleX: d3.ScaleTime<number, number, never> | d3.ScaleBand<number>;
     protected readonly scaleY: d3.ScaleLinear<number, number, never>;
 
     private readonly yAxis: d3.Axis<d3.NumberValue>;
@@ -56,7 +54,6 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
         super(props);
         // this.scaleXForInversion = d3.scaleLinear();
 
-        this.scaleX = this.initializeScaleX();
         this.scaleY = d3.scaleLinear().clamp(true);
         this.yAxis = d3.axisLeft(this.scaleY);
     }
@@ -69,8 +66,6 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
     componentDidUpdate() {
         this.renderGraph(this.svg!);
     }
-
-    abstract initializeScaleX(): d3.ScaleTime<number, number, never> | d3.ScaleBand<number>;
 
     render() {
         // Values are rendered above the selection for the tooltip
@@ -103,7 +98,7 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
 
         const xAxisHeight = this.props.graphDescription.xLabelHeight;
         this.scaleY
-            .domain([0, this.props.graphDescription.maxY])
+            .domain([this.props.graphDescription.minY, this.props.graphDescription.maxY])
             .range([this.height - this.padding.bottom - xAxisHeight, this.padding.top]);
 
         this.drawValues(svg);

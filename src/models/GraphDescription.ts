@@ -7,9 +7,14 @@ export abstract class GraphDescription {
     constructor(protected readonly periodDescription: PeriodDescription) {}
 
     abstract readonly barColor: string;
-    abstract readonly fieldName: UsageField;
+    abstract readonly lightColor: string;
+    abstract readonly fieldName: UsageField | "temperatuur";
 
     abstract readonly displayableUnit: string;
+
+    get minY(): number {
+        return 0;
+    }
 
     abstract get maxY(): number;
 
@@ -75,6 +80,7 @@ function range(start: number, end: number): number[] {
 
 export class GasGraphDescription extends GraphDescription {
     readonly barColor = "#e73710";
+    readonly lightColor = "#e73710";
     readonly fieldName = "gas";
 
     readonly displayableUnit = "m³";
@@ -115,6 +121,7 @@ export class StroomGraphDescription extends GraphDescription {
 
 export class WaterGraphDescription extends GraphDescription {
     readonly barColor = "#428bca";
+    readonly lightColor = "#428bca";
     readonly fieldName = "water";
 
     readonly displayableUnit = "L";
@@ -130,6 +137,37 @@ export class WaterGraphDescription extends GraphDescription {
             default:
                 return assertNever(this.periodSize);
         }
+    }
+
+    get tooltipValueFormat() {
+        return "d";
+    }
+}
+
+export class CurrentPowerUsageGraphDescription extends GraphDescription {
+    readonly barColor = "#f0ad4e";
+    readonly lightColor = "#ffddad";
+    readonly fieldName = "stroom";
+    readonly displayableUnit = "W";
+
+    get maxY() {
+        return 3000; // We only support a single period anyway
+    }
+}
+
+export class BinnenTemperatuurGraphDescription extends GraphDescription {
+    readonly barColor = "#428bca";
+    readonly lightColor = "#428bca";
+    readonly fieldName = "temperatuur";
+
+    readonly displayableUnit = "°C";
+
+    override get minY() {
+        return 15;
+    }
+
+    get maxY() {
+        return 35;
     }
 
     get tooltipValueFormat() {

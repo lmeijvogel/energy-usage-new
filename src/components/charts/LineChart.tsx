@@ -1,34 +1,47 @@
 import * as d3 from "d3";
 import { StroomGraphDescription } from "../../models/GraphDescription";
 
-import { ChartWithAxes } from "./ChartWithAxes";
+import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
 
 type ValueWithTimestamp = {
     value: number;
     timestamp: Date;
 };
 
+type Series = ValueWithTimestamp[];
+type SeriesCollection = Map<string, Series>;
+
 type SpecificProps = {
-    valuesWithTimestamp: ValueWithTimestamp[];
+    allSeries: SeriesCollection;
 };
 
 type scale = d3.ScaleTime<number, number, never>;
 
 export class LineChart extends ChartWithAxes<SpecificProps> {
-    override initializeScaleX() {
-        return d3.scaleTime();
+    protected readonly scaleX: d3.ScaleTime<number, number, never>;
+
+    constructor(props: ChartWithAxesProps & SpecificProps) {
+        super(props);
+
+        this.scaleX = d3.scaleTime();
     }
 
     override componentDidUpdate() {
-        const { valuesWithTimestamp } = this.props;
+        const { allSeries } = this.props;
 
-        if (valuesWithTimestamp.length > 0) {
-            const minDate = valuesWithTimestamp[0].timestamp;
-            const maxDate = valuesWithTimestamp[valuesWithTimestamp.length - 1].timestamp;
+        if (allSeries.size > 0) {
+            const firstSeries = this.firstSeries!;
 
-            (this.scaleX as scale)
-                .domain([minDate, maxDate])
-                .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+            if (firstSeries.length > 0) {
+                const domain = [
+                    this.props.periodDescription.startOfPeriod(),
+                    this.props.periodDescription.endOfPeriod()
+                ];
+
+                (this.scaleX as scale)
+                    .domain(domain)
+                    .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+            }
         }
 
         super.componentDidUpdate();
@@ -38,13 +51,16 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
         return `LineChart_${this.props.label}`;
     }
 
-    override get elementCount() {
-        return this.props.valuesWithTimestamp.length;
+    private get firstSeries(): ValueWithTimestamp[] | undefined {
+        const firstKey = Array.from(this.props.allSeries.keys())[0];
+
+        return this.props.allSeries.get(firstKey);
     }
 
     override drawValues(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        const graphDescription = new StroomGraphDescription(this.props.periodDescription);
+        const { allSeries, graphDescription } = this.props;
 
+        console.log("drawValues: ", allSeries);
         const lineGenerator = d3
             .line<ValueWithTimestamp>()
             .x((d) => (this.scaleX as scale)(d.timestamp))
@@ -57,36 +73,45 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
             .y1((d) => this.scaleY(d.value));
 
         // Add the line
-        svg.select("g.values > g.line").remove();
-        svg.select("g.values > g.area").remove();
+        svg.select("g.values").html("");
 
         const valuesSvg = svg.select("g.values");
 
-        const lineSvg = valuesSvg.append("g").attr("class", "line");
         const areaSvg = valuesSvg.append("g").attr("class", "area");
 
-        lineSvg
-            .append("path")
-            .attr("fill", "none")
-            .attr("stroke", graphDescription.barColor)
-            .attr("stroke-width", 4)
-            .attr("d", lineGenerator(this.props.valuesWithTimestamp))
-            .on("click", this.onValueClick);
+        allSeries.forEach((series, key) => {
+            const lineSvg = valuesSvg.append("g").attr("class", `line_${key}`);
+            lineSvg
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", graphDescription.barColor)
+                .attr("stroke-width", 4)
+                .attr("d", lineGenerator(series))
+                .on("click", this.onValueClick);
+        });
 
-        areaSvg
-            .append("path")
-            .attr("fill", graphDescription.lightColor)
-            .attr("stroke", graphDescription.barColor)
-            .attr("stroke-width", 0)
-            .attr("d", areaGenerator(this.props.valuesWithTimestamp))
-            .on("click", this.onValueClick);
+        if (allSeries.size === 1) {
+            const series = allSeries.values().next().value;
+
+            areaSvg
+                .append("path")
+                .attr("fill", graphDescription.lightColor)
+                .attr("stroke", graphDescription.barColor)
+                .attr("stroke-width", 0)
+                .attr("d", areaGenerator(series))
+                .on("click", this.onValueClick);
+        }
         //
         // .on("mouseenter", this.showTooltip)
         // .on("mouseleave", this.hideTooltip)
     }
 
     protected override renderXAxis(xAxisBase: d3.Selection<SVGGElement, unknown, HTMLElement, any>) {
-        const xAxis = d3.axisBottom(this.scaleX as any).ticks(d3.timeMinute.every(5), d3.timeFormat("%M"));
+        const { periodDescription } = this.props;
+        const ticks = periodDescription.getChartTicks();
+        const xAxis = d3
+            .axisBottom(this.scaleX as any)
+            .ticks(ticks, d3.timeFormat(periodDescription.timeFormatString()));
 
         xAxisBase.call(xAxis);
     }

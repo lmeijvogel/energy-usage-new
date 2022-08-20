@@ -1,3 +1,6 @@
+import * as d3 from "d3";
+import { addDays, addHours, addMinutes, addSeconds, endOfDay, endOfHour, endOfMonth, endOfYear } from "date-fns";
+
 export type GraphTickPositions = "on_value" | "between_values";
 
 const DAYS_OF_WEEK = ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"];
@@ -17,26 +20,11 @@ const FULL_MONTH_NAMES = [
     "december"
 ];
 
-const ABBREV_MONTH_NAMES = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-
 const firstMeasurementDate = new Date(2014, 2, 3);
 
 export abstract class PeriodDescription {
     abstract readonly periodSize: "year" | "month" | "day";
     abstract readonly graphTickPositions: GraphTickPositions;
-
-    padDatePart(part: number): string {
-        const stringPart = part.toString();
-
-        switch (stringPart.length) {
-            case 0:
-                return "00";
-            case 1:
-                return "0" + stringPart;
-            default:
-                return stringPart;
-        }
-    }
 
     abstract toUrl(): string;
     abstract toTitle(): string;
@@ -46,7 +34,11 @@ export abstract class PeriodDescription {
     abstract next(): PeriodDescription;
     abstract up(): PeriodDescription | null;
 
-    abstract formatTick(index: number): string;
+    abstract getChartTicks(): d3.TimeInterval;
+
+    abstract timeFormatString(): string;
+
+    abstract shiftHalfTick(date: Date): Date;
 
     hasMeasurements(): boolean {
         return !this.beforeFirstMeasurement() && !this.isInFuture();
@@ -67,6 +59,7 @@ export abstract class PeriodDescription {
     }
 
     abstract startOfPeriod(): Date;
+    abstract endOfPeriod(): Date;
 
     abstract atIndex(index: number): PeriodDescription;
 }
@@ -114,8 +107,20 @@ export class YearDescription extends PeriodDescription {
         return new Date(this.year, 0, 1);
     }
 
-    formatTick(index: number) {
-        return ABBREV_MONTH_NAMES[index]; // `${index + 1}`;
+    endOfPeriod(): Date {
+        return endOfYear(this.startOfPeriod());
+    }
+
+    timeFormatString() {
+        return "%m";
+    }
+
+    getChartTicks() {
+        return d3.timeMonth;
+    }
+
+    shiftHalfTick(date: Date) {
+        return addDays(date, -15);
     }
 
     atIndex(index: number): MonthDescription {
@@ -177,8 +182,20 @@ export class MonthDescription extends PeriodDescription {
         return new Date(this.year, this.month, 1);
     }
 
-    formatTick(index: number) {
-        return `${index + 1}`;
+    endOfPeriod(): Date {
+        return endOfMonth(this.startOfPeriod());
+    }
+
+    getChartTicks() {
+        return d3.timeDay.every(2)!;
+    }
+
+    shiftHalfTick(date: Date) {
+        return addHours(date, -12);
+    }
+
+    timeFormatString() {
+        return "%-d";
     }
 
     atIndex(index: number): DayDescription {
@@ -248,8 +265,20 @@ export class DayDescription extends PeriodDescription {
         return new Date(this.year, this.month, this.day);
     }
 
-    formatTick(index: number) {
-        return `${index}`;
+    endOfPeriod(): Date {
+        return endOfDay(this.startOfPeriod());
+    }
+
+    timeFormatString() {
+        return "%-H";
+    }
+
+    getChartTicks() {
+        return d3.timeHour.every(2)!;
+    }
+
+    shiftHalfTick(date: Date) {
+        return addMinutes(date, -30);
     }
 
     atIndex(index: number): HourDescription {
@@ -269,19 +298,6 @@ export class HourDescription extends PeriodDescription {
 
     readonly periodSize = "day"; // TODO: Should not be used!
     readonly graphTickPositions = "on_value";
-
-    padDatePart(part: number): string {
-        const stringPart = part.toString();
-
-        switch (stringPart.length) {
-            case 0:
-                return "00";
-            case 1:
-                return "0" + stringPart;
-            default:
-                return stringPart;
-        }
-    }
 
     toUrl() {
         return "";
@@ -306,8 +322,16 @@ export class HourDescription extends PeriodDescription {
         return new DayDescription(this.year, this.month, this.day);
     }
 
-    formatTick(index: number) {
-        return `${index}`;
+    timeFormatString() {
+        return "%M";
+    }
+
+    getChartTicks() {
+        return d3.timeHour;
+    }
+
+    shiftHalfTick(date: Date) {
+        return addSeconds(date, -30);
     }
 
     hasMeasurements(): boolean {
@@ -324,6 +348,10 @@ export class HourDescription extends PeriodDescription {
 
     startOfPeriod() {
         return new Date(this.year, this.month - 1, this.day, this.hour, 0);
+    }
+
+    endOfPeriod() {
+        return endOfHour(this.startOfPeriod());
     }
 
     atIndex(_index: number) {
