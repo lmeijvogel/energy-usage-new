@@ -15,8 +15,6 @@ type SpecificProps = {
     allSeries: SeriesCollection;
 };
 
-type scale = d3.ScaleTime<number, number, never>;
-
 export class LineChart extends ChartWithAxes<SpecificProps> {
     protected readonly scaleX: d3.ScaleTime<number, number, never>;
 
@@ -38,9 +36,7 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
                     this.props.periodDescription.endOfPeriod()
                 ];
 
-                (this.scaleX as scale)
-                    .domain(domain)
-                    .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+                this.scaleX.domain(domain).range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
             }
         }
 
@@ -60,50 +56,45 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
     override drawValues(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
         const { allSeries, graphDescription } = this.props;
 
-        console.log("drawValues: ", allSeries);
         const lineGenerator = d3
             .line<ValueWithTimestamp>()
-            .x((d) => (this.scaleX as scale)(d.timestamp))
+            .x((d) => this.scaleX(d.timestamp))
             .y((d) => this.scaleY(d.value));
 
         const areaGenerator = d3
             .area<ValueWithTimestamp>()
-            .x((d) => (this.scaleX as scale)(d.timestamp))
+            .x((d) => this.scaleX(d.timestamp))
             .y0(this.scaleY(0))
             .y1((d) => this.scaleY(d.value));
 
-        // Add the line
-        svg.select("g.values").html("");
-
         const valuesSvg = svg.select("g.values");
 
-        const areaSvg = valuesSvg.append("g").attr("class", "area");
-
         allSeries.forEach((series, key) => {
-            const lineSvg = valuesSvg.append("g").attr("class", `line_${key}`);
-            lineSvg
-                .append("path")
+            valuesSvg
+                .selectAll(`path.line_${key}`)
+                .data([series])
+                .join("path")
+                .attr("class", `line_${key}`)
                 .attr("fill", "none")
                 .attr("stroke", graphDescription.barColor)
                 .attr("stroke-width", 4)
-                .attr("d", lineGenerator(series))
-                .on("click", this.onValueClick);
+                .attr("d", lineGenerator);
         });
 
         if (allSeries.size === 1) {
             const series = allSeries.values().next().value;
 
-            areaSvg
-                .append("path")
+            valuesSvg
+                .select("g.area")
+                .selectAll("path")
+                .data([series])
+                .join("path")
                 .attr("fill", graphDescription.lightColor)
                 .attr("stroke", graphDescription.barColor)
                 .attr("stroke-width", 0)
-                .attr("d", areaGenerator(series))
+                .attr("d", areaGenerator)
                 .on("click", this.onValueClick);
         }
-        //
-        // .on("mouseenter", this.showTooltip)
-        // .on("mouseleave", this.hideTooltip)
     }
 
     protected override renderXAxis(xAxisBase: d3.Selection<SVGGElement, unknown, HTMLElement, any>) {

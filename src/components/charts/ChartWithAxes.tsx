@@ -77,7 +77,9 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
             >
                 <g className="gridLines" />
                 <g className="additionalInfo" />
-                <g className="values" />
+                <g className="values">
+                    <g className="area" />
+                </g>
                 <g className="xAxis" />
                 <g className="yAxis" />
                 <g className="selection">
