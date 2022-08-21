@@ -1,6 +1,17 @@
 import classNames from "classnames";
 import * as d3 from "d3";
-import { addHours, format, isSaturday, isSunday, set, subMinutes } from "date-fns";
+import {
+    addHours,
+    endOfToday,
+    format,
+    isMonday,
+    isSaturday,
+    isSunday,
+    set,
+    startOfDay,
+    startOfToday,
+    subMinutes
+} from "date-fns";
 
 import { useEffect } from "react";
 import { GraphDescription } from "../../models/GraphDescription";
@@ -54,10 +65,8 @@ export function CarpetChart({
         svg.attr("class", classNames(className));
         svg.attr("viewBox", `0 0 ${width} ${height}`);
 
-        const graph = svg.select(".graph");
+        const graph = svg.select(".values");
         graph.attr("width", width).attr("height", height);
-
-        graph.html("");
 
         graph
             .append("rect")
@@ -69,74 +78,65 @@ export function CarpetChart({
             .attr("stroke", borderGrey)
             .attr("stroke-width", "1px");
 
-        const axisContainer = graph
-            .append("g")
-            .attr("transform", `translate(${padding + axisWidth}, 0)`)
-            .style("font-size", "10pt");
+        const axisContainer = svg.select("g.axes");
 
-        const now = new Date();
-        const startOfDay = subMinutes(set(now, { hours: 0, minutes: 0, seconds: 0 }), 1);
-        const endOfDay = set(now, { hours: 24, minutes: 0, seconds: 0 });
+        axisContainer.attr("transform", `translate(${padding + axisWidth}, 0)`).style("font-size", "10pt");
+
+        if (entries.length === 0) {
+            return;
+        }
+
+        const scaleX = d3
+            .scaleTime()
+            .domain([startOfDay(entries[0].timestamp), startOfToday()])
+            .range([padding + axisWidth, width - padding]);
 
         const scaleY = d3
             .scaleTime()
-            .domain([startOfDay, endOfDay])
+            .domain([startOfToday(), endOfToday()])
             .range([height - padding, padding]);
 
         const xAxis = d3.axisLeft(scaleY).ticks(d3.timeHour.every(3), d3.timeFormat("%H:%M"));
 
-        axisContainer.call(xAxis);
+        axisContainer.call(xAxis as any);
 
         // TODO: Maybe there's another usage as well, maybe "year" with an entry for each day? :D
         if (periodDescription.periodSize === "month") {
             let lastDate: number | undefined;
-            let dayContainer: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
-            let column = -1;
 
             for (const entry of entries) {
                 if (entry.timestamp.getDate() !== lastDate) {
-                    column++;
-
-                    dayContainer = graph.append("g");
-
-                    const date = entry.timestamp;
-                    if (isSaturday(date)) {
-                        drawWeekendMarker(column, "saturday", dayContainer);
-                    } else if (isSunday(date)) {
-                        drawWeekendMarker(column, "sunday", dayContainer);
-                    }
+                    drawWeekendMarker(entry.timestamp, scaleX, graph!);
                     lastDate = entry.timestamp.getDate();
                 }
 
-                drawSquare(entry, column, colorScale, scaleY, dayContainer!);
+                drawSquare(entry, colorScale, scaleX, scaleY, graph!);
             }
         }
     };
 
     const drawWeekendMarker = (
-        column: number,
-        day: "saturday" | "sunday",
-        dayContainer: d3.Selection<SVGGElement, unknown, HTMLElement, any>
+        date: Date,
+        scaleX: d3.ScaleTime<number, number, never>,
+        container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>
     ) => {
-        let startX = padding + axisWidth + column * cellWidth;
+        if (isSaturday(date) || isMonday(date)) {
+            let startX = scaleX(startOfDay(date));
 
-        if (day === "sunday") {
-            startX += cellWidth;
+            container
+                .append("path")
+                .attr("d", `M${startX} ${padding} v${height - 2 * padding}`)
+                .attr("stroke-width", "1px")
+                .attr("stroke", borderGrey);
         }
-
-        dayContainer
-            .append("path")
-            .attr("d", `M${startX} ${padding} v${height - 2 * padding}`)
-            .attr("stroke-width", "1px")
-            .attr("stroke", borderGrey);
     };
 
     const drawSquare = (
         entry: MeasurementEntry,
-        column: number,
         colorScale: d3.ScaleLinear<number, number, never>,
+        scaleX: d3.ScaleTime<number, number, never>,
         scaleY: d3.ScaleTime<number, number, never>,
-        container: d3.Selection<SVGGElement, unknown, HTMLElement, any>
+        container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>
     ) => {
         const value = entry.value;
         const color = !!value ? colorScale(value) : "white";
@@ -149,13 +149,15 @@ export function CarpetChart({
             date: now.getDate()
         });
 
+        const timeStampMappedToMidnight = startOfDay(entry.timestamp);
+
         /* Add 1 hour to the y scale value, since the graph is read from bottom to top.
          * For example, the square for hour 1 to 2 is received as hour 1. We must draw it from the top down,
          * so that would be hour 2.
          */
         container
             .append("rect")
-            .attr("x", padding + axisWidth + column * cellWidth + dayPadding)
+            .attr("x", scaleX(timeStampMappedToMidnight))
             .attr("y", scaleY(addHours(timestampMappedToToday, 1)))
             .attr("width", cellWidth - 2 * dayPadding)
             .attr("height", cellHeight - 2 * dayPadding)
@@ -173,7 +175,9 @@ export function CarpetChart({
     return (
         <div className="radialGraphContainer">
             <svg id={`svg_carpet_${fieldName}`}>
-                <g className="graph" />
+                <g className="values" />
+                <g className="weekendMarkers" />
+                <g className="axes" />
             </svg>
         </div>
     );
