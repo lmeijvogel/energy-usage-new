@@ -104,18 +104,6 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
         this.drawValues(svg);
 
         this.updateAxes(svg);
-
-        // if (this.props.fieldName === "stroom") {
-        // const { periodDescription } = this.props;
-
-        // if (periodDescription instanceof DayDescription) {
-        // this.drawTimesOfDay(svg, periodDescription.toDate());
-        // } else {
-        // const g = svg.select("g.additionalInfo");
-
-        // g.selectChildren().remove();
-        // }
-        // }
     }
 
     protected onValueClick = ({ target }: { target: SVGRectElement }) => {
