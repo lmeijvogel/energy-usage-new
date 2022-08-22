@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { BarChart } from "./components/charts/BarChart";
-import { DayDescription, MonthDescription, PeriodDescription, YearDescription } from "./models/PeriodDescription";
+import {
+    DayDescription,
+    LastHourDescription,
+    MonthDescription,
+    PeriodDescription,
+    YearDescription
+} from "./models/PeriodDescription";
 
 import styles from "./App.module.css";
 import { Card } from "./components/Card";
@@ -131,6 +137,8 @@ export const App = () => {
     const currentPowerUsageGraphDescription = new CurrentPowerUsageGraphDescription(periodDescription);
     const temperatuurGraphDescription = new BinnenTemperatuurGraphDescription(periodDescription);
 
+    const lastHourPeriodDescription = new LastHourDescription();
+
     return (
         <div className="app">
             <div className={styles.row}>
@@ -238,7 +246,7 @@ export const App = () => {
                     <LineChart
                         label="Stroom"
                         className={styles.mainGraph}
-                        periodDescription={periodDescription}
+                        periodDescription={lastHourPeriodDescription}
                         graphDescription={currentPowerUsageGraphDescription}
                         allSeries={recentPowerUsageData}
                         onBarClick={choosePeriod}
@@ -246,18 +254,20 @@ export const App = () => {
                         graphTickPositions={periodDescription.graphTickPositions}
                     />
                 </Card>
-                <Card title={`Temperatuur huiskamer`}>
-                    <LineChart
-                        label="Temperatuur_Huiskamer"
-                        className={styles.mainGraph}
-                        periodDescription={periodDescription}
-                        graphDescription={temperatuurGraphDescription}
-                        allSeries={livingRoomTemperatureData}
-                        onBarClick={choosePeriod}
-                        tooltipLabelBuilder={toString}
-                        graphTickPositions={periodDescription.graphTickPositions}
-                    />
-                </Card>
+                <Row>
+                    <Card title={`Temperatuur huiskamer`}>
+                        <LineChart
+                            label="Temperatuur_Huiskamer"
+                            className={styles.mainGraph}
+                            periodDescription={periodDescription}
+                            graphDescription={temperatuurGraphDescription}
+                            allSeries={livingRoomTemperatureData}
+                            onBarClick={choosePeriod}
+                            tooltipLabelBuilder={toString}
+                            graphTickPositions={periodDescription.graphTickPositions}
+                        />
+                    </Card>
+                </Row>
             </Row>
             <NavigationButtons periodDescription={periodDescription} onSelect={setPeriodDescription} />
         </div>

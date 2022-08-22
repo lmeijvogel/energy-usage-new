@@ -35,7 +35,7 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
 
     private readonly elementRef = createRef<SVGSVGElement>();
 
-    private svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | null = null;
+    protected svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | null = null;
 
     /* When the user drags to select a number of bars,
      * it's necessary to find the bars corresponding to the
@@ -77,19 +77,14 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
             >
                 <g className="gridLines" />
                 <g className="additionalInfo" />
-                <g className="values">
-                    <g className="area" />
-                </g>
+                <g className="values" />
                 <g className="xAxis" />
                 <g className="yAxis" />
-                <g className="selection">
-                    <rect />
-                </g>
             </svg>
         );
     }
 
-    private initializeGraph() {
+    protected initializeGraph() {
         const id = this.elementRef.current!.id;
 
         this.svg = d3.select("#" + id).attr("viewBox", `0 0 ${this.width} ${this.height}`);
