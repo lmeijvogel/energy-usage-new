@@ -30,35 +30,6 @@ export abstract class GraphDescription {
         return this.periodDescription.periodSize === "year";
     }
 
-    get displayedTickIndices(): number[] {
-        switch (this.periodDescription.periodSize) {
-            case "year":
-                return range(0, 12);
-            case "month":
-                const daysInMonth = getDaysInMonth(this.periodDescription.startOfPeriod());
-
-                return range(0, daysInMonth).filter((i) => {
-                    if (i === 0 || i === daysInMonth - 1) {
-                        return true;
-                    }
-
-                    if (i % 2 === 0) {
-                        // Skip next-to-last day to make sure that there's always room
-                        if (i === daysInMonth - 2) {
-                            return false;
-                        }
-                        return true;
-                    }
-
-                    return false;
-                });
-            case "day":
-                return range(0, 23);
-            default:
-                return assertNever(this.periodDescription.periodSize);
-        }
-    }
-
     get tooltipValueFormat() {
         return ".2f";
     }
