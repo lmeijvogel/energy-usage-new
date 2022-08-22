@@ -104,6 +104,36 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         }
     }
 
+    protected onValueClick = ({ target }: { target: SVGRectElement }) => {
+        const index = parseInt(target.attributes.getNamedItem("index")!.value, 10);
+        this.props.onBarClick(index);
+    };
+
+    private showTooltip = (event: any, value: any) => {
+        const index = parseInt(event.target.attributes.getNamedItem("index")!.value, 10);
+        const contents = this.buildTooltipContents(index, value);
+        const tooltip = d3.select("#tooltip");
+
+        tooltip
+            .html(contents)
+            .style("left", event.pageX + 20 + "px")
+            .style("top", event.pageY - 58 + "px")
+            .style("display", "block");
+    };
+
+    private hideTooltip = () => {
+        const tooltip = d3.select("#tooltip");
+        tooltip.style("display", "none");
+    };
+
+    private buildTooltipContents(index: number, value: number) {
+        const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(value);
+
+        return `${this.props.periodDescription.atIndex(index).toShortTitle()}:<br />${formattedValue} ${
+            this.props.graphDescription.displayableUnit
+        }`;
+    }
+
     private calculateBarXPosition(i: number) {
         const pos = this.scaleX(i);
 

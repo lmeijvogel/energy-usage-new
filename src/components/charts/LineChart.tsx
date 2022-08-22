@@ -113,8 +113,7 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
                 .attr("fill", graphDescription.lightColor)
                 .attr("stroke", graphDescription.barColor)
                 .attr("stroke-width", 0)
-                .attr("d", areaGenerator)
-                .on("click", this.onValueClick);
+                .attr("d", areaGenerator);
         }
 
         // Create a rect on top of the svg area: this rectangle recovers mouse position
