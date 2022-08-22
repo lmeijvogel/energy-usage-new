@@ -122,13 +122,13 @@ export class CurrentPowerUsageGraphDescription extends GraphDescription {
     readonly displayableUnit = "W";
 
     get maxY() {
-        return 3000; // We only support a single period anyway
+        return 3; // We only support a single period anyway
     }
 }
 
 export class BinnenTemperatuurGraphDescription extends GraphDescription {
     readonly barColor = "#428bca";
-    readonly lightColor = "#428bca";
+    readonly lightColor = "#ffddad";
     readonly fieldName = "temperatuur";
 
     readonly displayableUnit = "°C";
