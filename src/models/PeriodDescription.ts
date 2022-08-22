@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { addDays, addHours, addMinutes, addSeconds, endOfDay, endOfHour, endOfMonth, endOfYear } from "date-fns";
+import { addDays, addHours, addMinutes, addSeconds, endOfDay, endOfHour, endOfMonth, endOfYear, sub } from "date-fns";
 
 export type GraphTickPositions = "on_value" | "between_values";
 
@@ -326,7 +326,7 @@ export class HourDescription extends PeriodDescription {
         return "%M";
     }
 
-    getChartTicks() {
+    getChartTicks(): d3.TimeInterval {
         return d3.timeHour;
     }
 
@@ -370,6 +370,27 @@ export class HourDescription extends PeriodDescription {
     }
 }
 
+export class LastHourDescription extends HourDescription {
+    constructor() {
+        super(now().getFullYear(), now().getMonth(), now().getDate(), now().getHours());
+    }
+
+    override endOfPeriod() {
+        return new Date();
+    }
+
+    override startOfPeriod() {
+        return sub(this.endOfPeriod(), { hours: 1 });
+    }
+
+    getChartTicks() {
+        return d3.timeMinute.every(5)!;
+    }
+}
+
+function now() {
+    return new Date();
+}
 export function deserializePeriodDescription(input: any): PeriodDescription {
     switch (input.type) {
         case "DayDescription":
