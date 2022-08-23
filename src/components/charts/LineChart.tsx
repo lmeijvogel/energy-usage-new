@@ -1,12 +1,8 @@
 import * as d3 from "d3";
 import { MeasurementEntry } from "../../models/MeasurementEntry";
+import {ValueWithTimestamp} from "../../models/ValueWithTimestamp";
 
 import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
-
-type ValueWithTimestamp = {
-    value: number;
-    timestamp: Date;
-};
 
 type Series = ValueWithTimestamp[];
 type SeriesCollection = Map<string, Series>;

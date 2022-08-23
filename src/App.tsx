@@ -159,7 +159,7 @@ export const App = () => {
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
                         graphDescription={gasGraphDescription}
-                        series={periodGasData.map((el) => el.value)}
+                        series={periodGasData}
                         onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}
@@ -179,7 +179,7 @@ export const App = () => {
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
                         graphDescription={stroomGraphDescription}
-                        series={periodStroomData.map((el) => el.value)}
+                        series={periodStroomData}
                         onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}
@@ -199,7 +199,7 @@ export const App = () => {
                         className={styles.mainGraph}
                         periodDescription={periodDescription}
                         graphDescription={waterGraphDescription}
-                        series={periodWaterData.map((el) => el.value)}
+                        series={periodWaterData}
                         onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}

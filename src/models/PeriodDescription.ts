@@ -1,5 +1,19 @@
 import * as d3 from "d3";
-import { addDays, addHours, addMinutes, addSeconds, endOfDay, endOfHour, endOfMonth, endOfYear, sub } from "date-fns";
+import {
+    addDays,
+    addHours,
+    addMinutes,
+    addSeconds,
+    endOfDay,
+    endOfHour,
+    endOfMonth,
+    endOfYear,
+    startOfDay,
+    startOfHour,
+    startOfMinute,
+    startOfMonth,
+    sub
+} from "date-fns";
 
 export type GraphTickPositions = "on_value" | "between_values";
 
@@ -35,6 +49,8 @@ export abstract class PeriodDescription {
     abstract up(): PeriodDescription | null;
 
     abstract getChartTicks(): d3.TimeInterval;
+    abstract getExpectedDomainValues(): d3.TimeInterval;
+    abstract normalize(date: Date): Date;
 
     abstract timeFormatString(): string;
 
@@ -115,8 +131,12 @@ export class YearDescription extends PeriodDescription {
         return "%m";
     }
 
-    getChartTicks() {
+    getExpectedDomainValues() {
         return d3.timeMonth;
+    }
+
+    getChartTicks() {
+        return this.getExpectedDomainValues();
     }
 
     shiftHalfTick(date: Date) {
@@ -125,6 +145,10 @@ export class YearDescription extends PeriodDescription {
 
     atIndex(index: number): MonthDescription {
         return new MonthDescription(this.year, index);
+    }
+
+    normalize(date: Date) {
+        return startOfMonth(date);
     }
 }
 
@@ -186,8 +210,12 @@ export class MonthDescription extends PeriodDescription {
         return endOfMonth(this.startOfPeriod());
     }
 
+    getExpectedDomainValues() {
+        return d3.timeDay;
+    }
+
     getChartTicks() {
-        return d3.timeDay.every(2)!;
+        return this.getExpectedDomainValues().every(2)!;
     }
 
     shiftHalfTick(date: Date) {
@@ -200,6 +228,10 @@ export class MonthDescription extends PeriodDescription {
 
     atIndex(index: number): DayDescription {
         return new DayDescription(this.year, this.month, index + 1);
+    }
+
+    normalize(date: Date) {
+        return startOfDay(date);
     }
 }
 
@@ -273,8 +305,12 @@ export class DayDescription extends PeriodDescription {
         return "%-H";
     }
 
+    getExpectedDomainValues() {
+        return d3.timeHour;
+    }
+
     getChartTicks() {
-        return d3.timeHour.every(2)!;
+        return this.getExpectedDomainValues().every(2)!;
     }
 
     shiftHalfTick(date: Date) {
@@ -283,6 +319,10 @@ export class DayDescription extends PeriodDescription {
 
     atIndex(index: number): HourDescription {
         return new HourDescription(this.year, this.month, this.day, index);
+    }
+
+    normalize(date: Date) {
+        return startOfHour(date);
     }
 }
 
@@ -326,8 +366,12 @@ export class HourDescription extends PeriodDescription {
         return "%M";
     }
 
-    getChartTicks(): d3.TimeInterval {
+    getExpectedDomainValues(): d3.TimeInterval {
         return d3.timeHour;
+    }
+
+    getChartTicks() {
+        return this.getExpectedDomainValues();
     }
 
     shiftHalfTick(date: Date) {
@@ -367,6 +411,10 @@ export class HourDescription extends PeriodDescription {
 
     private warnNotSupported() {
         console.warn("HourDescription is not a fully supported PeriodDescription.");
+    }
+
+    normalize(date: Date) {
+        return startOfMinute(date);
     }
 }
 

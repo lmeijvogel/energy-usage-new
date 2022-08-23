@@ -1,18 +1,20 @@
 import * as d3 from "d3";
+import { startOfDay } from "date-fns";
+import { ValueWithTimestamp } from "../../models/ValueWithTimestamp";
 
 import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
 
 type SpecificProps = {
-    series: number[];
+    series: ValueWithTimestamp[];
 };
 
 export class BarChart extends ChartWithAxes<SpecificProps> {
-    protected readonly scaleX: d3.ScaleTime<number, number, never> | d3.ScaleBand<number>;
+    protected readonly scaleX: d3.ScaleBand<Date>;
 
     constructor(props: ChartWithAxesProps & SpecificProps) {
         super(props);
 
-        this.scaleX = d3.scaleBand<number>().padding(0.15);
+        this.scaleX = d3.scaleBand<Date>().padding(0.15);
     }
 
     override get elementId() {
@@ -20,9 +22,13 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
     }
 
     override componentDidUpdate() {
-        const domain = d3.range(0, this.props.series.length, 1);
+        const { periodDescription } = this.props;
 
-        (this.scaleX as d3.ScaleBand<number>)
+        const domain = periodDescription
+            .getExpectedDomainValues()
+            .range(periodDescription.startOfPeriod(), periodDescription.endOfPeriod());
+
+        (this.scaleX as d3.ScaleBand<Date>)
             .domain(domain)
             .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
 
@@ -38,10 +44,10 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .on("mouseenter", this.showTooltip)
             .on("mouseleave", this.hideTooltip)
 
-            .attr("y", (el: number) => this.scaleY(el))
-            .attr("height", (el: number) => this.scaleY(0) - this.scaleY(el))
-            .attr("x", (_val: number, i: number) => this.calculateBarXPosition(i))
-            .attr("width", (this.scaleX as d3.ScaleBand<number>).bandwidth())
+            .attr("y", (el) => this.scaleY(el.value))
+            .attr("height", (el) => this.scaleY(0) - this.scaleY(el.value))
+            .attr("x", (el) => this.calculateBarXPosition(el.timestamp))
+            .attr("width", this.scaleX.bandwidth())
             .attr("fill", this.props.graphDescription.barColor)
             .attr("index", (_d: any, i: number) => i);
     }
@@ -134,8 +140,9 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         }`;
     }
 
-    private calculateBarXPosition(i: number) {
-        const pos = this.scaleX(i);
+    private calculateBarXPosition(date: Date) {
+        const { periodDescription } = this.props;
+        const pos = this.scaleX(periodDescription.normalize(date));
 
         return !!pos ? pos : 0;
     }
