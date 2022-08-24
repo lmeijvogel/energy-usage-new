@@ -34,7 +34,7 @@ function usePeriodData(fieldName: UsageField, periodDescription: PeriodDescripti
 
     useEffect(() => {
         fetchPeriodData(fieldName, periodDescription).then(setPeriodData);
-    }, [periodDescription, setPeriodData]);
+    }, [fieldName, periodDescription]);
 
     return [periodData];
 }
@@ -58,7 +58,7 @@ function useCarpetData(fieldName: UsageField) {
 
     useEffect(() => {
         fetchCarpetData(fieldName).then(setCarpetData);
-    }, []);
+    }, [fieldName]);
 
     return [carpetData];
 }
