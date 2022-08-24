@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { MeasurementEntry } from "../../models/MeasurementEntry";
-import {ValueWithTimestamp} from "../../models/ValueWithTimestamp";
+import { ValueWithTimestamp } from "../../models/ValueWithTimestamp";
 
 import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
 
@@ -51,7 +51,9 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
                     this.props.periodDescription.endOfPeriod()
                 ];
 
-                this.scaleX.domain(domain).range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+                const minimumX = this.padding.left + this.axisWidth;
+                const maximumX = this.width - this.padding.right;
+                this.scaleX.domain(domain).range([minimumX, maximumX]);
             }
         }
 
@@ -139,9 +141,7 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
         }
 
         // This allows to find the closest X index of the mouse:
-        var bisect = d3.bisector(function (d: MeasurementEntry) {
-            return (d as any).timestamp;
-        }).right;
+        var bisect = d3.bisector((d: MeasurementEntry) => d.timestamp).right;
 
         const pointerX = d3.pointer(event)[0];
         const pointerDate = this.scaleX.invert(pointerX);
@@ -168,11 +168,13 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
             .attr("stroke-width", 1)
             .attr("d", `M${x},${this.padding.top} V ${this.height - this.padding.bottom}`);
 
-        const text = ys.map(this.scaleY.invert).map(d3.format(".1f")).join(" - ");
-
         const tooltip = d3.select("#tooltip");
         tooltip
-            .text(text)
+            .html(
+                this.buildTooltipContents(
+                    Array.from(this.props.allSeries.values()).map((series) => series[closestIndex])
+                )
+            )
             .style("left", event.pageX + 20 + "px")
             .style("top", event.pageY - 58 + "px")
             .style("display", "block");
@@ -191,5 +193,28 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
             .ticks(ticks, d3.timeFormat(periodDescription.timeFormatString()));
 
         xAxisBase.call(xAxis);
+    }
+
+    private buildTooltipContents(valuesWithTimestamp: ValueWithTimestamp[]) {
+        const formattedValues = valuesWithTimestamp
+            .map((v) => v.value)
+            .map(d3.format(this.props.graphDescription.tooltipValueFormat))
+            .map((value) => `${value} ${this.props.graphDescription.displayableUnit}`);
+
+        const [minValue, maxValue] = formattedValues;
+
+        // Only display two values if there are two distinct values.
+        // A case for the same values would be the day display of living room temperatures:
+        // These are (almost?) always the same, so a single value should be enough.
+        let displayedValue: string;
+        if (!!minValue && !!maxValue && minValue !== maxValue) {
+            displayedValue = `max: ${maxValue}<br />min: ${minValue}`;
+        } else {
+            displayedValue = minValue;
+        }
+
+        return `${this.props.periodDescription
+            .atIndex(valuesWithTimestamp[0].timestamp)
+            .toShortTitle()}:<br />${displayedValue}`;
     }
 }

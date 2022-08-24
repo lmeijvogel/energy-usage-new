@@ -142,6 +142,6 @@ export class BinnenTemperatuurGraphDescription extends GraphDescription {
     }
 
     get tooltipValueFormat() {
-        return "d";
+        return ".1f";
     }
 }

@@ -399,7 +399,7 @@ export class HourDescription extends PeriodDescription {
     }
 
     atIndex(_date: Date) {
-        this.warnNotSupported();
+        // Not supported, but don't throw Exceptions
         return this;
     }
 
