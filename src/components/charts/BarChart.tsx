@@ -41,9 +41,11 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .range(periodDescription.startOfPeriod(), periodDescription.endOfPeriod());
 
         this.scaleX.domain(domain).range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+
+        const bandwidth = this.scaleX.bandwidth();
         this.scaleXForInversion
             .domain([domain[0], domain[domain.length - 1]])
-            .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+            .range([this.axisWidth + bandwidth / 2, this.width - this.padding.right - bandwidth / 2]);
 
         super.componentDidUpdate();
     }
@@ -160,9 +162,14 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         // Find all y-values to highlight
         const hoveredEntry = this.props.series[closestIndex];
 
+        if (!hoveredEntry) {
+            return;
+        }
+
         // Use `scaleXForInversion` because ScaleBand does not return anything,
         // possibly due to imprecise matches.
-        const x = this.scaleXForInversion(hoveredEntry.timestamp);
+        const x =
+            this.scaleX(this.props.periodDescription.normalize(hoveredEntry.timestamp))! + this.scaleX.bandwidth() / 2;
         const y = this.scaleY(hoveredEntry.value);
 
         this.svg!.select("g.crosshairs g.horizontal")
