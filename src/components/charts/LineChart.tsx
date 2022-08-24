@@ -14,8 +14,6 @@ type SpecificProps = {
 export class LineChart extends ChartWithAxes<SpecificProps> {
     protected readonly scaleX: d3.ScaleTime<number, number, never>;
 
-    private mouseCatcherSvg: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | null = null;
-
     constructor(props: ChartWithAxesProps & SpecificProps) {
         super(props);
 
@@ -35,8 +33,6 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
 
         const tooltipSvg = this.svg!.append("g").attr("class", "tooltip");
         tooltipSvg.append("text").attr("fill", "black");
-
-        this.svg!.append("rect").attr("class", "mouseCatcher");
     }
 
     override componentDidUpdate() {
@@ -115,17 +111,7 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
         }
 
         // Create a rect on top of the svg area: this rectangle recovers mouse position
-        this.mouseCatcherSvg = svg.select("rect.mouseCatcher");
-
-        this.mouseCatcherSvg
-            .attr("class", "mouseCatcher")
-            .style("fill", "none")
-            .style("pointer-events", "all")
-            .attr("width", this.width)
-            .attr("height", this.height)
-            .on("mouseover", this.mouseover)
-            .on("mousemove", this.mousemove)
-            .on("mouseout", this.mouseout);
+        svg.on("mouseover", this.mouseover).on("mousemove", this.mousemove).on("mouseout", this.mouseout);
 
         svg.select("g.tooltip").attr("width", 100).attr("height", 100).attr("fill", "white");
     }

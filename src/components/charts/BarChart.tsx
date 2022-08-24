@@ -11,7 +11,6 @@ type SpecificProps = {
 export class BarChart extends ChartWithAxes<SpecificProps> {
     protected readonly scaleX: d3.ScaleBand<Date>;
     protected readonly scaleXForInversion: d3.ScaleTime<number, number, unknown>;
-    private mouseCatcherSvg: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | null = null;
 
     constructor(props: ChartWithAxesProps & SpecificProps) {
         super(props);
@@ -28,8 +27,6 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
 
         crosshairsSvg.append("g").attr("class", "horizontal");
         crosshairsSvg.append("path").attr("class", "vertical");
-
-        this.svg!.append("rect").attr("class", "mouseCatcher");
     }
 
     override get elementId() {
@@ -64,18 +61,7 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .attr("fill", this.props.graphDescription.barColor)
             .attr("index", (_d: any, i: number) => i);
 
-        // Create a rect on top of the svg area: this rectangle recovers mouse position
-        this.mouseCatcherSvg = svg.select("rect.mouseCatcher");
-
-        this.mouseCatcherSvg
-            .attr("class", "mouseCatcher")
-            .style("fill", "none")
-            .style("pointer-events", "all")
-            .attr("width", this.width)
-            .attr("height", this.height)
-            .on("mouseover", this.mouseover)
-            .on("mousemove", this.mousemove)
-            .on("mouseout", this.mouseout);
+        svg.on("mouseover", this.mouseover).on("mousemove", this.mousemove).on("mouseout", this.mouseout);
 
         svg.select("g.tooltip").attr("width", 100).attr("height", 100).attr("fill", "white");
     }
