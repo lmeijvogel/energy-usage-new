@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-import { startOfDay } from "date-fns";
 import { ValueWithTimestamp } from "../../models/ValueWithTimestamp";
 
 import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
@@ -29,9 +28,7 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .getExpectedDomainValues()
             .range(periodDescription.startOfPeriod(), periodDescription.endOfPeriod());
 
-        (this.scaleX as d3.ScaleBand<Date>)
-            .domain(domain)
-            .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+        this.scaleX.domain(domain).range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
 
         super.componentDidUpdate();
     }
