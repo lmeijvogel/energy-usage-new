@@ -15,7 +15,6 @@ export type ChartWithAxesProps = {
     periodDescription: PeriodDescription;
     graphDescription: GraphDescription;
     // colorIntense: string;
-    onBarClick: (index: number) => void;
     tooltipLabelBuilder: (title: number) => string;
     graphTickPositions: GraphTickPositions;
 };

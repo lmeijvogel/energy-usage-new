@@ -6,6 +6,7 @@ import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
 
 type SpecificProps = {
     series: ValueWithTimestamp[];
+    onBarClick: (index: number) => void;
 };
 
 export class BarChart extends ChartWithAxes<SpecificProps> {

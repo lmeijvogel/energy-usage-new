@@ -249,7 +249,6 @@ export const App = () => {
                         periodDescription={lastHourPeriodDescription}
                         graphDescription={currentPowerUsageGraphDescription}
                         allSeries={recentPowerUsageData}
-                        onBarClick={choosePeriod}
                         tooltipLabelBuilder={toString}
                         graphTickPositions={periodDescription.graphTickPositions}
                     />
@@ -262,7 +261,6 @@ export const App = () => {
                             periodDescription={periodDescription}
                             graphDescription={temperatuurGraphDescription}
                             allSeries={livingRoomTemperatureData}
-                            onBarClick={choosePeriod}
                             tooltipLabelBuilder={toString}
                             graphTickPositions={periodDescription.graphTickPositions}
                         />
