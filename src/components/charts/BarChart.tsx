@@ -6,7 +6,7 @@ import { ChartWithAxes, ChartWithAxesProps } from "./ChartWithAxes";
 
 type SpecificProps = {
     series: ValueWithTimestamp[];
-    onBarClick: (index: number) => void;
+    onBarClick: (date: Date) => void;
 };
 
 export class BarChart extends ChartWithAxes<SpecificProps> {
@@ -111,14 +111,12 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         }
     }
 
-    protected onValueClick = ({ target }: { target: SVGRectElement }) => {
-        const index = parseInt(target.attributes.getNamedItem("index")!.value, 10);
-        this.props.onBarClick(index);
+    protected onValueClick = (_event: unknown, value: ValueWithTimestamp) => {
+        this.props.onBarClick(value.timestamp);
     };
 
-    private showTooltip = (event: any, value: any) => {
-        const index = parseInt(event.target.attributes.getNamedItem("index")!.value, 10);
-        const contents = this.buildTooltipContents(index, value);
+    private showTooltip = (event: any, value: ValueWithTimestamp) => {
+        const contents = this.buildTooltipContents(value);
         const tooltip = d3.select("#tooltip");
 
         tooltip
@@ -133,12 +131,12 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         tooltip.style("display", "none");
     };
 
-    private buildTooltipContents(index: number, value: number) {
-        const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(value);
+    private buildTooltipContents(valueWithTimestamp: ValueWithTimestamp) {
+        const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(valueWithTimestamp.value);
 
-        return `${this.props.periodDescription.atIndex(index).toShortTitle()}:<br />${formattedValue} ${
-            this.props.graphDescription.displayableUnit
-        }`;
+        return `${this.props.periodDescription
+            .atIndex(valueWithTimestamp.timestamp)
+            .toShortTitle()}:<br />${formattedValue} ${this.props.graphDescription.displayableUnit}`;
     }
 
     private calculateBarXPosition(date: Date) {

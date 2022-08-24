@@ -117,8 +117,8 @@ export const App = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const choosePeriod = (index: number) => {
-        const newPeriod = periodDescription.atIndex(index);
+    const choosePeriod = (date: Date) => {
+        const newPeriod = periodDescription.atIndex(date);
 
         if (
             newPeriod instanceof DayDescription ||

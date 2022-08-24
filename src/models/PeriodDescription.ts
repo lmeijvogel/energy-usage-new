@@ -77,7 +77,7 @@ export abstract class PeriodDescription {
     abstract startOfPeriod(): Date;
     abstract endOfPeriod(): Date;
 
-    abstract atIndex(index: number): PeriodDescription;
+    abstract atIndex(date: Date): PeriodDescription;
 }
 
 export class YearDescription extends PeriodDescription {
@@ -143,8 +143,8 @@ export class YearDescription extends PeriodDescription {
         return addDays(date, -15);
     }
 
-    atIndex(index: number): MonthDescription {
-        return new MonthDescription(this.year, index);
+    atIndex(date: Date): MonthDescription {
+        return new MonthDescription(date.getFullYear(), date.getMonth());
     }
 
     normalize(date: Date) {
@@ -226,8 +226,8 @@ export class MonthDescription extends PeriodDescription {
         return "%-d";
     }
 
-    atIndex(index: number): DayDescription {
-        return new DayDescription(this.year, this.month, index + 1);
+    atIndex(date: Date): DayDescription {
+        return new DayDescription(date.getFullYear(), date.getMonth(), date.getDate());
     }
 
     normalize(date: Date) {
@@ -317,8 +317,8 @@ export class DayDescription extends PeriodDescription {
         return addMinutes(date, -30);
     }
 
-    atIndex(index: number): HourDescription {
-        return new HourDescription(this.year, this.month, this.day, index);
+    atIndex(date: Date): HourDescription {
+        return new HourDescription(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
     }
 
     normalize(date: Date) {
@@ -398,7 +398,7 @@ export class HourDescription extends PeriodDescription {
         return endOfHour(this.startOfPeriod());
     }
 
-    atIndex(_index: number) {
+    atIndex(_date: Date) {
         this.warnNotSupported();
         return this;
     }
