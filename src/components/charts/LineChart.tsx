@@ -130,7 +130,6 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
 
     mouseover = () => {
         this.svg!.select("g.crosshairs").attr("opacity", 1);
-        this.svg!.select("g.tooltip").attr("opacity", 1);
     };
 
     // Example from https://d3-graph-gallery.com/graph/line_cursor.html
@@ -171,11 +170,12 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
 
         const text = ys.map(this.scaleY.invert).map(d3.format(".1f")).join(" - ");
 
-        this.svg!.select("g.tooltip text")
-            .attr("x", Math.floor(x))
-            .attr("y", (d) => 20)
-            .style("font-size", "13pt")
-            .text(text);
+        const tooltip = d3.select("#tooltip");
+        tooltip
+            .text(text)
+            .style("left", event.pageX + 20 + "px")
+            .style("top", event.pageY - 58 + "px")
+            .style("display", "block");
     };
 
     mouseout = () => {
