@@ -86,10 +86,13 @@ export function CarpetChart({
             return;
         }
 
+        /* The `cellWidth / 2` is there to make the scale return the centerpoints of
+         * the squares. We can then offset the squares so they end up in the right place.
+         */
         const scaleX = d3
             .scaleTime()
             .domain([startOfDay(entries[0].timestamp), startOfToday()])
-            .range([padding + axisWidth, width - padding]);
+            .range([padding + axisWidth + cellWidth / 2, width - padding - cellWidth / 2]);
 
         const scaleY = d3
             .scaleTime()
@@ -121,7 +124,7 @@ export function CarpetChart({
         container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>
     ) => {
         if (isSaturday(date) || isMonday(date)) {
-            let startX = scaleX(startOfDay(date));
+            let startX = scaleX(startOfDay(date)) - cellWidth / 2 - dayPadding;
 
             container
                 .append("path")
@@ -157,7 +160,7 @@ export function CarpetChart({
          */
         container
             .append("rect")
-            .attr("x", scaleX(timeStampMappedToMidnight))
+            .attr("x", scaleX(timeStampMappedToMidnight) - cellWidth / 2)
             .attr("y", scaleY(addHours(timestampMappedToToday, 1)))
             .attr("width", cellWidth - 2 * dayPadding)
             .attr("height", cellHeight - 2 * dayPadding)
