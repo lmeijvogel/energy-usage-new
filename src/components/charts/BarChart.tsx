@@ -10,11 +10,26 @@ type SpecificProps = {
 
 export class BarChart extends ChartWithAxes<SpecificProps> {
     protected readonly scaleX: d3.ScaleBand<Date>;
+    protected readonly scaleXForInversion: d3.ScaleTime<number, number, unknown>;
+    private mouseCatcherSvg: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | null = null;
 
     constructor(props: ChartWithAxesProps & SpecificProps) {
         super(props);
 
         this.scaleX = d3.scaleBand<Date>().padding(0.15);
+        this.scaleXForInversion = d3.scaleTime();
+    }
+
+    override initializeGraph() {
+        super.initializeGraph();
+
+        const crosshairsSvg = this.svg!.append("g");
+        crosshairsSvg.attr("class", "crosshairs");
+
+        crosshairsSvg.append("g").attr("class", "horizontal");
+        crosshairsSvg.append("path").attr("class", "vertical");
+
+        this.svg!.append("rect").attr("class", "mouseCatcher");
     }
 
     override get elementId() {
@@ -29,6 +44,9 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .range(periodDescription.startOfPeriod(), periodDescription.endOfPeriod());
 
         this.scaleX.domain(domain).range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
+        this.scaleXForInversion
+            .domain([domain[0], domain[domain.length - 1]])
+            .range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
 
         super.componentDidUpdate();
     }
@@ -39,15 +57,27 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .data(this.props.series)
             .join("rect")
             .on("click", this.onValueClick)
-            .on("mouseenter", this.showTooltip)
-            .on("mouseleave", this.hideTooltip)
-
             .attr("y", (el) => this.scaleY(el.value))
             .attr("height", (el) => this.scaleY(0) - this.scaleY(el.value))
             .attr("x", (el) => this.calculateBarXPosition(el.timestamp))
             .attr("width", this.scaleX.bandwidth())
             .attr("fill", this.props.graphDescription.barColor)
             .attr("index", (_d: any, i: number) => i);
+
+        // Create a rect on top of the svg area: this rectangle recovers mouse position
+        this.mouseCatcherSvg = svg.select("rect.mouseCatcher");
+
+        this.mouseCatcherSvg
+            .attr("class", "mouseCatcher")
+            .style("fill", "none")
+            .style("pointer-events", "all")
+            .attr("width", this.width)
+            .attr("height", this.height)
+            .on("mouseover", this.mouseover)
+            .on("mousemove", this.mousemove)
+            .on("mouseout", this.mouseout);
+
+        svg.select("g.tooltip").attr("width", 100).attr("height", 100).attr("fill", "white");
     }
 
     // private drawTimesOfDay(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>, date: Date) {
@@ -112,22 +142,6 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         this.props.onBarClick(value.timestamp);
     };
 
-    private showTooltip = (event: any, value: ValueWithTimestamp) => {
-        const contents = this.buildTooltipContents(value);
-        const tooltip = d3.select("#tooltip");
-
-        tooltip
-            .html(contents)
-            .style("left", event.pageX + 20 + "px")
-            .style("top", event.pageY - 58 + "px")
-            .style("display", "block");
-    };
-
-    private hideTooltip = () => {
-        const tooltip = d3.select("#tooltip");
-        tooltip.style("display", "none");
-    };
-
     private buildTooltipContents(valueWithTimestamp: ValueWithTimestamp) {
         const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(valueWithTimestamp.value);
 
@@ -142,4 +156,53 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
 
         return !!pos ? pos : 0;
     }
+
+    mouseover = () => {
+        this.svg!.select("g.crosshairs").attr("opacity", 1);
+    };
+
+    // Example from https://d3-graph-gallery.com/graph/line_cursor.html
+    mousemove = (event: any) => {
+        // This allows to find the closest X index of the mouse:
+        var bisect = d3.bisector((d: ValueWithTimestamp) => d.timestamp).right;
+
+        const pointerX = d3.pointer(event)[0];
+        const pointerDate = this.scaleXForInversion.invert(pointerX);
+
+        var closestIndex = bisect(this.props.series, pointerDate, 1) - 1;
+
+        // Find all y-values to highlight
+        const hoveredEntry = this.props.series[closestIndex];
+
+        // Use `scaleXForInversion` because ScaleBand does not return anything,
+        // possibly due to imprecise matches.
+        const x = this.scaleXForInversion(hoveredEntry.timestamp);
+        const y = this.scaleY(hoveredEntry.value);
+
+        this.svg!.select("g.crosshairs g.horizontal")
+            .selectAll("path.value")
+            .data([y])
+            .join("path")
+            .attr("class", "value")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("d", (y) => `M${this.padding.left + this.axisWidth},${y} H ${this.width - this.padding.right}`);
+
+        this.svg!.select("g.crosshairs path.vertical")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("d", `M${x},${this.padding.top} V ${this.height - this.padding.bottom}`);
+
+        const tooltip = d3.select("#tooltip");
+        tooltip
+            .html(this.buildTooltipContents(hoveredEntry))
+            .style("left", event.pageX + 20 + "px")
+            .style("top", event.pageY - 58 + "px")
+            .style("display", "block");
+    };
+
+    mouseout = () => {
+        this.svg!.select("g.crosshairs").attr("opacity", 0);
+        this.svg!.select("g.tooltip").attr("opacity", 0);
+    };
 }
