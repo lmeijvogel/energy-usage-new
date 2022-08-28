@@ -1,0 +1,41 @@
+:root {
+    --gauge-good-color: #bbff33;
+    --gauge-regular-color: #ffbb33;
+    --gauge-bad-color: #ff3333;
+}
+
+.scaleOk {
+    fill: var(--gauge-good-color);
+}
+
+.scaleRegular {
+    fill: var(--gauge-regular-color);
+}
+
+.scaleWarn {
+    fill: var(--gauge-bad-color);
+}
+
+.gaugeOk {
+    stroke: none;
+    fill: var(--gauge-good-color);
+}
+
+.gaugeRegular {
+    stroke: none;
+    fill: var(--gauge-regular-color);
+}
+
+.gaugeBad {
+    stroke: none;
+    fill: var(--gauge-bad-color);
+}
+
+.gaugeOverflow {
+    stroke: black;
+    fill: var(--gauge-bad-color);
+}
+
+.guide {
+    fill: #e8e8e8;
+}

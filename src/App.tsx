@@ -25,6 +25,7 @@ import { CarpetChart } from "./components/charts/CarpetChart";
 import { Row } from "./components/Row";
 import { LineChart } from "./components/charts/LineChart";
 import { UsageField } from "./models/UsageData";
+import { Gauge } from "./components/charts/Gauge";
 
 export type MeasurementResponse = [timestampString: string, value: number];
 export type MinMaxMeasurementResponse = [timestampString: string, minValue: number, maxValue: number];
@@ -208,6 +209,42 @@ export const App = () => {
                 </Card>
             </Row>
             <Row>
+                <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
+                    <LineChart
+                        label="Stroom"
+                        className={styles.mainGraph}
+                        periodDescription={lastHourPeriodDescription}
+                        graphDescription={currentPowerUsageGraphDescription}
+                        allSeries={recentPowerUsageData}
+                        tooltipLabelBuilder={toString}
+                        graphTickPositions={periodDescription.graphTickPositions}
+                    />
+                </Card>
+                <Card className={styles.wideCard} title="Actueel verbruik">
+                    <Gauge
+                        label="Gauge"
+                        value={currentPowerUsageWatts}
+                        okValue={500}
+                        warnValue={2000}
+                        maxValue={3000}
+                        fieldName="current"
+                    />
+                </Card>
+                <Row>
+                    <Card title={`Temperatuur huiskamer`}>
+                        <LineChart
+                            label="Temperatuur_Huiskamer"
+                            className={styles.mainGraph}
+                            periodDescription={periodDescription}
+                            graphDescription={temperatuurGraphDescription}
+                            allSeries={livingRoomTemperatureData}
+                            tooltipLabelBuilder={toString}
+                            graphTickPositions={periodDescription.graphTickPositions}
+                        />
+                    </Card>
+                </Row>
+            </Row>
+            <Row collapsed={collapseCarpets}>
                 <Card className={styles.wideCard} title="Gas (last 30 days)">
                     <CarpetChart
                         className={styles.carpetChart}
@@ -241,32 +278,6 @@ export const App = () => {
                         entries={carpetWaterData}
                     />
                 </Card>
-            </Row>
-            <Row>
-                <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
-                    <LineChart
-                        label="Stroom"
-                        className={styles.mainGraph}
-                        periodDescription={lastHourPeriodDescription}
-                        graphDescription={currentPowerUsageGraphDescription}
-                        allSeries={recentPowerUsageData}
-                        tooltipLabelBuilder={toString}
-                        graphTickPositions={periodDescription.graphTickPositions}
-                    />
-                </Card>
-                <Row>
-                    <Card title={`Temperatuur huiskamer`}>
-                        <LineChart
-                            label="Temperatuur_Huiskamer"
-                            className={styles.mainGraph}
-                            periodDescription={periodDescription}
-                            graphDescription={temperatuurGraphDescription}
-                            allSeries={livingRoomTemperatureData}
-                            tooltipLabelBuilder={toString}
-                            graphTickPositions={periodDescription.graphTickPositions}
-                        />
-                    </Card>
-                </Row>
             </Row>
             <NavigationButtons periodDescription={periodDescription} onSelect={setPeriodDescription} />
         </div>
