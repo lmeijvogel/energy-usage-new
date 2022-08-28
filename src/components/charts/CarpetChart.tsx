@@ -41,6 +41,8 @@ export function CarpetChart({
         drawGraph(entries);
     }, [entries]);
 
+    const svg = d3.select(`#svg_carpet_${fieldName}`);
+
     const drawGraph = (entries: MeasurementEntry[]) => {
         const data = entries.map((entry) => truncate(entry.value, 3));
 
@@ -51,7 +53,6 @@ export function CarpetChart({
             .domain([0, max])
             .range(["white", graphDescription.barColor as any]);
 
-        const svg = d3.select(`#svg_carpet_${fieldName}`);
         svg.attr("class", classNames(className));
         svg.attr("viewBox", `0 0 ${width} ${height}`);
 
@@ -163,35 +164,60 @@ export function CarpetChart({
             );
     };
 
+    function showTooltip(event: any, entry: MeasurementEntry, value: number, graphDescription: GraphDescription) {
+        const timestamp = entry.timestamp;
+
+        const dateString = format(timestamp, "eee yyyy-MM-dd HH:00");
+        const contents = `${dateString}<br />value: <b>${d3.format(".2f")(value)}</b> ${
+            graphDescription.displayableUnit
+        }`;
+
+        const tooltip = d3.select("#tooltip");
+
+        tooltip
+            .html(contents)
+            .style("left", event.pageX + 20 + "px")
+            .style("top", event.pageY - 58 + "px")
+            .style("display", "block");
+
+        svg.select("g.crosshairs")
+            .style("display", "block")
+            .selectAll("path.horizontal")
+            .data([event.target.y])
+            .join("path")
+            .attr("class", "horizontal")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("d", (y) => `M${padding + axisWidth},${y.baseVal.value + cellHeight / 2} H ${width - padding}`);
+
+        svg.select("g.crosshairs")
+            .selectAll("path.vertical")
+            .data([event.target.x])
+            .join("path")
+            .attr("class", "vertical")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("d", (x) => `M${x.baseVal.value + cellWidth / 2},${padding} V ${height - padding}`);
+    }
+
+    function hideTooltip() {
+        const tooltip = d3.select("#tooltip");
+        tooltip.style("display", "none");
+
+        const crosshairs = svg.select("g.crosshairs");
+        crosshairs.style("display", "none");
+    }
+
     return (
         <div className="radialGraphContainer">
             <svg id={`svg_carpet_${fieldName}`}>
                 <g className="values" />
                 <g className="weekendMarkers" />
                 <g className="axes" />
+                <g className="crosshairs" />
             </svg>
         </div>
     );
-}
-
-function showTooltip(event: any, entry: MeasurementEntry, value: number, graphDescription: GraphDescription) {
-    const timestamp = entry.timestamp;
-
-    const dateString = format(timestamp, "eee yyyy-MM-dd HH:00");
-    const contents = `${dateString}<br />value: <b>${d3.format(".2f")(value)}</b> ${graphDescription.displayableUnit}`;
-
-    const tooltip = d3.select("#tooltip");
-
-    tooltip
-        .html(contents)
-        .style("left", event.pageX + 20 + "px")
-        .style("top", event.pageY - 58 + "px")
-        .style("display", "block");
-}
-
-function hideTooltip() {
-    const tooltip = d3.select("#tooltip");
-    tooltip.style("display", "none");
 }
 
 function truncate(value: number, precision: number): number {
