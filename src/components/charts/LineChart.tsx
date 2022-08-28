@@ -168,7 +168,8 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
 
     mouseout = () => {
         this.svg!.select("g.crosshairs").attr("opacity", 0);
-        this.svg!.select("g.tooltip").attr("opacity", 0);
+
+        d3.select("#tooltip").style("display", "none");
     };
 
     protected override renderXAxis(xAxisBase: d3.Selection<SVGGElement, unknown, HTMLElement, any>) {
