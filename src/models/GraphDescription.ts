@@ -1,7 +1,6 @@
 import { PeriodDescription } from "./PeriodDescription";
 import { UsageField } from "../models/UsageData";
 import { assertNever } from "../lib/assertNever";
-import getDaysInMonth from "date-fns/getDaysInMonth";
 
 export abstract class GraphDescription {
     constructor(protected readonly periodDescription: PeriodDescription) {}

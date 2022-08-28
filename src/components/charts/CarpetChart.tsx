@@ -1,17 +1,6 @@
 import classNames from "classnames";
 import * as d3 from "d3";
-import {
-    addHours,
-    endOfToday,
-    format,
-    isMonday,
-    isSaturday,
-    isSunday,
-    set,
-    startOfDay,
-    startOfToday,
-    subMinutes
-} from "date-fns";
+import { addHours, endOfToday, format, isMonday, isSaturday, set, startOfDay, startOfToday } from "date-fns";
 
 import { useEffect } from "react";
 import { GraphDescription } from "../../models/GraphDescription";
@@ -30,6 +19,7 @@ type Props = {
 };
 
 const borderGrey = "#ccc";
+
 export function CarpetChart({
     className,
     width,
