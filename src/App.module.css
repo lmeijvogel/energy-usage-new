@@ -10,3 +10,18 @@
     width: 500px;
     height: 300px;
 }
+
+@media screen and (max-width: 575px) {
+    .mainGraph {
+        width: 350px;
+    }
+
+    .wideCard {
+        width: 350px;
+    }
+
+    .carpetChart {
+        width: 350px;
+        height: 300px;
+    }
+}

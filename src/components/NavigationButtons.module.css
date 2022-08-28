@@ -3,7 +3,14 @@
     flex-direction: column;
 
     width: 600px;
+
     margin: 20px auto;
+}
+
+@media screen and (max-width: 575px) {
+    .navigationButtons {
+        width: 350px;
+    }
 }
 
 .row {
