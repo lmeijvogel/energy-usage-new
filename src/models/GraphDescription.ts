@@ -122,7 +122,11 @@ export class CurrentPowerUsageGraphDescription extends GraphDescription {
     readonly displayableUnit = "W";
 
     get maxY() {
-        return 3; // We only support a single period anyway
+        return 3000; // We only support a single period anyway
+    }
+
+    get tooltipValueFormat() {
+        return "d";
     }
 }
 

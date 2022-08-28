@@ -30,7 +30,7 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
         bottom: 10,
         left: 10
     };
-    readonly axisWidth = 30;
+    readonly axisWidth = 50;
 
     private readonly elementRef = createRef<SVGSVGElement>();
 

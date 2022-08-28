@@ -99,14 +99,15 @@ export const App = () => {
             fetch("/api/stroom/recent")
                 .then((response) => response.json())
                 .then((json) => json.map(parseResponseRow))
-                .then((data: MeasurementEntry[]) => {
+                .then((dataInKW: MeasurementEntry[]) => {
+                    const dataInW = dataInKW.map((entry) => ({ ...entry, value: entry.value * 1000 }));
                     setRecentPowerUsageData((existingData) => {
-                        existingData.set("recentPowerUsage", data);
+                        existingData.set("recentPowerUsage", dataInW);
 
                         return existingData;
                     });
 
-                    setCurrentPowerUsageWatts(data.length > 0 ? data[0].value * 1000 : 0);
+                    setCurrentPowerUsageWatts(dataInW.length > 0 ? dataInW[dataInW.length - 1].value : 0);
                 });
         };
 
