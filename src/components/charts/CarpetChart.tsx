@@ -171,8 +171,6 @@ export function CarpetChart({
                 "title",
                 `${timestampMappedToToday.getDate()}-${timestampMappedToToday.getMonth()} ${timestampMappedToToday.getHours()}:00 ${value}`
             );
-        // .attr("stroke-width", dataIsZero ? 0.5 : 0)
-        // .attr("stroke", "#888");
     };
 
     return (
