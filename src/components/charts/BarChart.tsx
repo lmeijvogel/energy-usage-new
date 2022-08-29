@@ -79,7 +79,7 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
     // drawTimeBands(g, times, this.scaleX, padding.top, bandHeight, padding.left + axisWidth, width - padding.right);
     // }
 
-    protected override renderXAxis(xAxisBase: d3.Selection<SVGGElement, unknown, HTMLElement, any>) {
+    protected override renderXAxis(xAxisBase: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
         /* The reasonable assumption would be that creating a scale for a bar chart
          * would just reuse the band scale, but that has the downside that the ticks will
          * always end up in the middle of the bars. For the year and month charts that is fine:
@@ -112,7 +112,10 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .ticks(ticks, d3.timeFormat(periodDescription.timeFormatString()))
             .tickSizeOuter(0);
 
-        const renderedXAxisLabels = xAxisBase.call(xAxis).selectAll("text").style("font-size", "13pt");
+        const renderedXAxisLabels = xAxisBase
+            .call(xAxis as any)
+            .selectAll("text")
+            .style("font-size", "13pt");
 
         if (graphDescription.hasTextLabels) {
             renderedXAxisLabels

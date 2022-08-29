@@ -91,15 +91,8 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
     }
 
     private updateAxes(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        /* Remove and repaint the axis: When switching between scales (or formatting, not sure),
-         * the first tick kept getting painted wrong (shifted to the left).
-         *
-         * Starting clean fixes this.
-         */
-        svg.select("g.xAxis").remove();
-
         const xAxisBase = svg
-            .append("g")
+            .select("g.xAxis")
             .attr("class", "xAxis")
             .attr("transform", `translate(0, ${this.scaleY(0)})`);
 
@@ -110,7 +103,8 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
             .style("font-size", "13pt")
             .call(this.yAxis as any);
     }
-    protected abstract renderXAxis(xAxisBase: d3.Selection<SVGGElement, unknown, HTMLElement, any>): void;
+
+    protected abstract renderXAxis(xAxisBase: d3.Selection<d3.BaseType, unknown, HTMLElement, any>): void;
 
     protected abstract drawValues(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>): void;
 }

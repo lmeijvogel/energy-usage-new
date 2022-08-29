@@ -172,14 +172,14 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
         d3.select("#tooltip").style("display", "none");
     };
 
-    protected override renderXAxis(xAxisBase: d3.Selection<SVGGElement, unknown, HTMLElement, any>) {
+    protected override renderXAxis(xAxisBase: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
         const { periodDescription } = this.props;
         const ticks = periodDescription.getChartTicks();
         const xAxis = d3
             .axisBottom(this.scaleX as any)
             .ticks(ticks, d3.timeFormat(periodDescription.timeFormatString()));
 
-        xAxisBase.call(xAxis);
+        xAxisBase.call(xAxis as any);
     }
 
     private buildTooltipContents(valuesWithTimestamp: ValueWithTimestamp[]) {
