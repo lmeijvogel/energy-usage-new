@@ -11,7 +11,6 @@ import {
 import styles from "./App.module.css";
 import { Card } from "./components/Card";
 import { buildUsageCardTitle } from "./components/CardTitle";
-import { NavigationButtons } from "./components/NavigationButtons";
 import {
     BinnenTemperatuurGraphDescription,
     CurrentPowerUsageGraphDescription,
@@ -26,6 +25,7 @@ import { Row } from "./components/Row";
 import { LineChart } from "./components/charts/LineChart";
 import { UsageField } from "./models/UsageData";
 import { Gauge } from "./components/charts/Gauge";
+import { NavigationOverlay } from "./components/NavigationOverlay";
 
 export type MeasurementResponse = [timestampString: string, value: number];
 export type MinMaxMeasurementResponse = [timestampString: string, minValue: number, maxValue: number];
@@ -142,145 +142,143 @@ export const App = () => {
     const lastHourPeriodDescription = new LastHourDescription();
 
     return (
-        <div className="app">
-            <div className={styles.row}>
-                <h1>{periodDescription.toTitle()}</h1>
-            </div>
-            <Row>
-                <Card
-                    title={buildUsageCardTitle(
-                        "Gas",
-                        periodDescription.startOfPeriod(),
-                        gasGraphDescription,
-                        periodGasData,
-                        "gas"
-                    )}
-                >
-                    <BarChart
-                        label="Gas"
-                        className={styles.mainGraph}
-                        periodDescription={periodDescription}
-                        graphDescription={gasGraphDescription}
-                        series={periodGasData}
-                        onBarClick={choosePeriod}
-                        tooltipLabelBuilder={toString}
-                        graphTickPositions={periodDescription.graphTickPositions}
-                    />
-                </Card>
-                <Card
-                    title={buildUsageCardTitle(
-                        "Stroom",
-                        periodDescription.startOfPeriod(),
-                        stroomGraphDescription,
-                        periodStroomData,
-                        "stroom"
-                    )}
-                >
-                    <BarChart
-                        label="Stroom"
-                        className={styles.mainGraph}
-                        periodDescription={periodDescription}
-                        graphDescription={stroomGraphDescription}
-                        series={periodStroomData}
-                        onBarClick={choosePeriod}
-                        tooltipLabelBuilder={toString}
-                        graphTickPositions={periodDescription.graphTickPositions}
-                    />
-                </Card>
-                <Card
-                    title={buildUsageCardTitle(
-                        "Water",
-                        periodDescription.startOfPeriod(),
-                        waterGraphDescription,
-                        periodWaterData,
-                        "water"
-                    )}
-                >
-                    <BarChart
-                        label="Water"
-                        className={styles.mainGraph}
-                        periodDescription={periodDescription}
-                        graphDescription={waterGraphDescription}
-                        series={periodWaterData}
-                        onBarClick={choosePeriod}
-                        tooltipLabelBuilder={toString}
-                        graphTickPositions={periodDescription.graphTickPositions}
-                    />
-                </Card>
-            </Row>
-            <Row>
-                <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
-                    <LineChart
-                        label="Stroom"
-                        className={styles.mainGraph}
-                        periodDescription={lastHourPeriodDescription}
-                        graphDescription={currentPowerUsageGraphDescription}
-                        allSeries={recentPowerUsageData}
-                        tooltipLabelBuilder={toString}
-                        graphTickPositions={periodDescription.graphTickPositions}
-                    />
-                </Card>
-                <Card className={styles.wideCard} title="Actueel verbruik">
-                    <Gauge
-                        label="Gauge"
-                        value={currentPowerUsageWatts}
-                        okValue={500}
-                        warnValue={2000}
-                        maxValue={3000}
-                        fieldName="current"
-                    />
-                </Card>
+        <NavigationOverlay periodDescription={periodDescription} onSelect={setPeriodDescription}>
+            <div className="app">
                 <Row>
-                    <Card title={`Temperatuur huiskamer`}>
-                        <LineChart
-                            label="Temperatuur_Huiskamer"
+                    <Card
+                        title={buildUsageCardTitle(
+                            "Gas",
+                            periodDescription.startOfPeriod(),
+                            gasGraphDescription,
+                            periodGasData,
+                            "gas"
+                        )}
+                    >
+                        <BarChart
+                            label="Gas"
                             className={styles.mainGraph}
                             periodDescription={periodDescription}
-                            graphDescription={temperatuurGraphDescription}
-                            allSeries={livingRoomTemperatureData}
+                            graphDescription={gasGraphDescription}
+                            series={periodGasData}
+                            onBarClick={choosePeriod}
+                            tooltipLabelBuilder={toString}
+                            graphTickPositions={periodDescription.graphTickPositions}
+                        />
+                    </Card>
+                    <Card
+                        title={buildUsageCardTitle(
+                            "Stroom",
+                            periodDescription.startOfPeriod(),
+                            stroomGraphDescription,
+                            periodStroomData,
+                            "stroom"
+                        )}
+                    >
+                        <BarChart
+                            label="Stroom"
+                            className={styles.mainGraph}
+                            periodDescription={periodDescription}
+                            graphDescription={stroomGraphDescription}
+                            series={periodStroomData}
+                            onBarClick={choosePeriod}
+                            tooltipLabelBuilder={toString}
+                            graphTickPositions={periodDescription.graphTickPositions}
+                        />
+                    </Card>
+                    <Card
+                        title={buildUsageCardTitle(
+                            "Water",
+                            periodDescription.startOfPeriod(),
+                            waterGraphDescription,
+                            periodWaterData,
+                            "water"
+                        )}
+                    >
+                        <BarChart
+                            label="Water"
+                            className={styles.mainGraph}
+                            periodDescription={periodDescription}
+                            graphDescription={waterGraphDescription}
+                            series={periodWaterData}
+                            onBarClick={choosePeriod}
                             tooltipLabelBuilder={toString}
                             graphTickPositions={periodDescription.graphTickPositions}
                         />
                     </Card>
                 </Row>
-            </Row>
-            <Row collapsed={collapseCarpets}>
-                <Card className={styles.wideCard} title="Gas (last 30 days)">
-                    <CarpetChart
-                        className={styles.carpetChart}
-                        width={500}
-                        height={300}
-                        fieldName="gas"
-                        graphDescription={gasGraphDescription}
-                        periodDescription={MonthDescription.thisMonth()}
-                        entries={carpetGasData}
-                    />
-                </Card>
-                <Card className={styles.wideCard} title="Stroom (last 30 days)">
-                    <CarpetChart
-                        className={styles.carpetChart}
-                        width={500}
-                        height={300}
-                        fieldName="stroom"
-                        graphDescription={stroomGraphDescription}
-                        periodDescription={MonthDescription.thisMonth()}
-                        entries={carpetStroomData}
-                    />
-                </Card>
-                <Card className={styles.wideCard} title="Water (30 days)">
-                    <CarpetChart
-                        className={styles.carpetChart}
-                        width={500}
-                        height={300}
-                        fieldName="water"
-                        graphDescription={waterGraphDescription}
-                        periodDescription={MonthDescription.thisMonth()}
-                        entries={carpetWaterData}
-                    />
-                </Card>
-            </Row>
-            <NavigationButtons periodDescription={periodDescription} onSelect={setPeriodDescription} />
-        </div>
+                <Row>
+                    <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
+                        <LineChart
+                            label="Stroom"
+                            className={styles.mainGraph}
+                            periodDescription={lastHourPeriodDescription}
+                            graphDescription={currentPowerUsageGraphDescription}
+                            allSeries={recentPowerUsageData}
+                            tooltipLabelBuilder={toString}
+                            graphTickPositions={periodDescription.graphTickPositions}
+                        />
+                    </Card>
+                    <Card className={styles.wideCard} title="Actueel verbruik">
+                        <Gauge
+                            label="Gauge"
+                            value={currentPowerUsageWatts}
+                            okValue={500}
+                            warnValue={2000}
+                            maxValue={3000}
+                            fieldName="current"
+                        />
+                    </Card>
+                    <Row>
+                        <Card title={`Temperatuur huiskamer`}>
+                            <LineChart
+                                label="Temperatuur_Huiskamer"
+                                className={styles.mainGraph}
+                                periodDescription={periodDescription}
+                                graphDescription={temperatuurGraphDescription}
+                                allSeries={livingRoomTemperatureData}
+                                tooltipLabelBuilder={toString}
+                                graphTickPositions={periodDescription.graphTickPositions}
+                            />
+                        </Card>
+                    </Row>
+                </Row>
+                <Row>
+                    <Card className={styles.wideCard} title="Gas (last 30 days)">
+                        <CarpetChart
+                            className={styles.carpetChart}
+                            width={500}
+                            height={300}
+                            fieldName="gas"
+                            graphDescription={gasGraphDescription}
+                            periodDescription={MonthDescription.thisMonth()}
+                            entries={carpetGasData}
+                        />
+                    </Card>
+                    <Card className={styles.wideCard} title="Stroom (last 30 days)">
+                        <CarpetChart
+                            className={styles.carpetChart}
+                            width={500}
+                            height={300}
+                            fieldName="stroom"
+                            graphDescription={stroomGraphDescription}
+                            periodDescription={MonthDescription.thisMonth()}
+                            entries={carpetStroomData}
+                        />
+                    </Card>
+                    <Card className={styles.wideCard} title="Water (30 days)">
+                        <CarpetChart
+                            className={styles.carpetChart}
+                            width={500}
+                            height={300}
+                            fieldName="water"
+                            graphDescription={waterGraphDescription}
+                            periodDescription={MonthDescription.thisMonth()}
+                            entries={carpetWaterData}
+                        />
+                    </Card>
+                </Row>
+            </div>
+        </NavigationOverlay>
     );
 };
 
