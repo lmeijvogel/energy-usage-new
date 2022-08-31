@@ -9,14 +9,19 @@ type SpecificProps = {
 };
 
 export class BarChart extends ChartWithAxes<SpecificProps> {
-    protected readonly scaleX: d3.ScaleBand<Date>;
-    protected readonly scaleXForInversion: d3.ScaleTime<number, number, unknown>;
+    private readonly scaleX: d3.ScaleBand<Date>;
+    private readonly scaleXForInversion: d3.ScaleTime<number, number, unknown>;
 
+    private readonly brush: d3.BrushBehavior<unknown>;
+    private values: d3.Selection<d3.BaseType | SVGRectElement, ValueWithTimestamp, d3.BaseType, unknown> | undefined;
+    private brushSvg: d3.Selection<SVGGElement, unknown, HTMLElement, any> | undefined;
     constructor(props: ChartWithAxesProps & SpecificProps) {
         super(props);
 
         this.scaleX = d3.scaleBand<Date>().padding(0.15);
         this.scaleXForInversion = d3.scaleTime();
+
+        this.brush = d3.brushX();
     }
 
     override initializeGraph() {
@@ -27,6 +32,51 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
 
         crosshairsSvg.append("g").attr("class", "horizontal");
         crosshairsSvg.append("path").attr("class", "vertical");
+
+        // Add the brush before the values because otherwise the values aren't clickable.
+        this.brushSvg = this.svg!.insert("g", ".values");
+        this.brushSvg.attr("class", "brush");
+
+        this.brush.extent([
+            [this.padding.left + this.axisWidth, this.padding.top],
+            [this.width - this.padding.right, this.height - this.padding.bottom - this.xAxisHeight()]
+        ]);
+
+        this.brush
+            .on("brush", (event: any, d: unknown) => {
+                const selection = event.selection;
+
+                if (!selection) return;
+
+                const bandwidth = this.scaleX.bandwidth() / 2;
+                const selectedTimes = selection.map((px: number) => px - bandwidth).map(this.scaleXForInversion.invert);
+
+                const selectedEntries = this.props.series.filter(
+                    (entry) => entry.timestamp >= selectedTimes[0] && entry.timestamp <= selectedTimes[1]
+                );
+                this.values?.attr("fill", (el) => {
+                    const timestamp = this.props.periodDescription.normalize(el.timestamp);
+                    if (timestamp < selectedTimes[0] || timestamp > selectedTimes[1]) {
+                        return this.props.graphDescription.barColor;
+                    } else {
+                        return "#ff00ff";
+                    }
+                });
+
+                const left = event.pageX + 20 + "px";
+                const top = event.pageY - 58 + "px";
+
+                if (selectedEntries.length) {
+                    this.showTooltip(this.buildTooltipContentsForRange(selectedEntries), left, top);
+                }
+            })
+            .on("end", (event: any) => {
+                if (!event.selection) {
+                    this.values?.attr("fill", this.props.graphDescription.barColor);
+                }
+            });
+
+        this.brushSvg.call(this.brush);
     }
 
     override get elementId() {
@@ -46,11 +96,14 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .domain([periodDescription.startOfPeriod(), periodDescription.endOfPeriod()])
             .range([this.axisWidth + this.padding.left, this.width - this.padding.right]);
 
+        this.brushSvg?.call(this.brush.move, null);
+
         super.componentDidUpdate();
     }
 
     override drawValues(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        svg.select("g.values")
+        this.values = svg
+            .select("g.values")
             .selectAll("rect")
             .data(this.props.series)
             .join("rect")
@@ -63,8 +116,6 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .attr("index", (_d: any, i: number) => i);
 
         svg.on("mouseover", this.mouseover).on("mousemove", this.mousemove).on("mouseout", this.mouseout);
-
-        svg.select("g.tooltip").attr("width", 100).attr("height", 100).attr("fill", "white");
     }
 
     // private drawTimesOfDay(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>, date: Date) {
@@ -132,12 +183,22 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
         this.props.onBarClick(value.timestamp);
     };
 
-    private buildTooltipContents(valueWithTimestamp: ValueWithTimestamp) {
+    private buildTooltipContentsForSingleMeasurement(valueWithTimestamp: ValueWithTimestamp) {
         const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(valueWithTimestamp.value);
 
         return `${this.props.periodDescription
             .atIndex(valueWithTimestamp.timestamp)
             .toShortTitle()}:<br />${formattedValue} ${this.props.graphDescription.displayableUnit}`;
+    }
+
+    private buildTooltipContentsForRange(values: ValueWithTimestamp[]) {
+        const total = d3.sum(values.map((value) => value.value));
+
+        const formattedValue = d3.format(this.props.graphDescription.tooltipValueFormat)(total);
+
+        const startTimestamp = this.props.periodDescription.atIndex(values[0].timestamp).toShortTitle();
+        const endTimestamp = this.props.periodDescription.atIndex(values[values.length - 1].timestamp).toShortTitle();
+        return `${startTimestamp}-${endTimestamp}:<br />${formattedValue} ${this.props.graphDescription.displayableUnit}`;
     }
 
     private calculateBarXPosition(date: Date) {
@@ -188,16 +249,26 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
             .attr("stroke-width", 1)
             .attr("d", `M${x},${this.padding.top} V ${this.height - this.padding.bottom}`);
 
-        const tooltip = d3.select("#tooltip");
-        tooltip
-            .html(this.buildTooltipContents(hoveredEntry))
-            .style("left", event.pageX + 20 + "px")
-            .style("top", event.pageY - 58 + "px")
-            .style("display", "block");
+        const left = event.pageX + 20 + "px";
+        const top = event.pageY - 58 + "px";
+
+        this.showTooltip(this.buildTooltipContentsForSingleMeasurement(hoveredEntry), left, top);
     };
 
     mouseout = () => {
         this.svg!.select("g.crosshairs").attr("opacity", 0);
-        this.svg!.select("g.tooltip").attr("opacity", 0);
+        console.log("mouseout");
+        this.hideTooltip();
     };
+
+    showTooltip(text: string, left: string, top: string) {
+        const tooltip = d3.select("#tooltip");
+        tooltip.html(text).style("left", left).style("top", top).style("display", "block");
+    }
+
+    hideTooltip() {
+        const tooltip = d3.select("#tooltip");
+
+        tooltip.style("display", "none");
+    }
 }
