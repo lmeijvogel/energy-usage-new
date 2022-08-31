@@ -36,6 +36,8 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
 
     protected svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | null = null;
 
+    private xAxisBase: d3.Selection<d3.BaseType, unknown, HTMLElement, any> | undefined;
+
     protected readonly scaleY: d3.ScaleLinear<number, number, never>;
 
     private readonly yAxis: d3.Axis<d3.NumberValue>;
@@ -77,13 +79,17 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
         const id = this.elementRef.current!.id;
 
         this.svg = d3.select("#" + id).attr("viewBox", `0 0 ${this.width} ${this.height}`);
+        this.xAxisBase = this.svg.select("g.xAxis");
+    }
+
+    protected xAxisHeight() {
+        return this.props.graphDescription.xLabelHeight;
     }
 
     private renderGraph(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        const xAxisHeight = this.props.graphDescription.xLabelHeight;
         this.scaleY
             .domain([this.props.graphDescription.minY, this.props.graphDescription.maxY])
-            .range([this.height - this.padding.bottom - xAxisHeight, this.padding.top]);
+            .range([this.height - this.padding.bottom - this.xAxisHeight(), this.padding.top]);
 
         this.drawValues(svg);
 
@@ -91,12 +97,9 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
     }
 
     private updateAxes(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        const xAxisBase = svg
-            .select("g.xAxis")
-            .attr("class", "xAxis")
-            .attr("transform", `translate(0, ${this.scaleY(0)})`);
+        this.xAxisBase!.attr("class", "xAxis").attr("transform", `translate(0, ${this.scaleY(0)})`);
 
-        this.renderXAxis(xAxisBase);
+        this.renderXAxis(this.xAxisBase!);
 
         svg.select(".yAxis")
             .attr("transform", `translate(${this.padding.left + this.axisWidth}, 0)`)
