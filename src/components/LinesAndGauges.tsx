@@ -91,7 +91,7 @@ export function LinesAndGauges({ periodDescription }: Props) {
                     graphTickPositions={periodDescription.graphTickPositions}
                 />
             </Card>
-            <Card className={styles.wideCard} title="Actueel verbruik">
+            <Card className={styles.narrowGraph} title="Actueel verbruik">
                 <Gauge
                     label="Gauge"
                     value={currentPowerUsageWatts}

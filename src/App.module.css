@@ -1,9 +1,16 @@
 .mainGraph {
-    width: 400px;
+    width: 500px;
+    height: 300px;
+}
+
+.narrowGraph {
+    width: 500px;
+    height: 300px;
 }
 
 .wideCard {
     width: 500px;
+    height: 350px;
 }
 
 .carpetChart {
