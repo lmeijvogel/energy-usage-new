@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { BarChart } from "./components/charts/BarChart";
 import {
     DayDescription,
     LastHourDescription,
@@ -10,65 +9,21 @@ import {
 
 import styles from "./App.module.css";
 import { Card } from "./components/Card";
-import { buildUsageCardTitle } from "./components/CardTitle";
-import {
-    BinnenTemperatuurGraphDescription,
-    CurrentPowerUsageGraphDescription,
-    GasGraphDescription,
-    StroomGraphDescription,
-    WaterGraphDescription
-} from "./models/GraphDescription";
-import { padData } from "./helpers/padData";
+import { BinnenTemperatuurGraphDescription, CurrentPowerUsageGraphDescription } from "./models/GraphDescription";
 import { MeasurementEntry } from "./models/MeasurementEntry";
-import { CarpetChart } from "./components/charts/CarpetChart";
 import { Row } from "./components/Row";
 import { LineChart } from "./components/charts/LineChart";
-import { UsageField } from "./models/UsageData";
 import { Gauge } from "./components/charts/Gauge";
 import { NavigationOverlay } from "./components/NavigationOverlay";
+import { PeriodGraphs } from "./components/PeriodGraphs";
+import { responseRowToMeasurementEntry } from "./helpers/responseRowToMeasurementEntry";
+import { CarpetCharts } from "./components/CarpetCharts";
 
 export type MeasurementResponse = [timestampString: string, value: number];
 export type MinMaxMeasurementResponse = [timestampString: string, minValue: number, maxValue: number];
 
-function usePeriodData(fieldName: UsageField, periodDescription: PeriodDescription) {
-    const [periodData, setPeriodData] = useState<MeasurementEntry[]>([]);
-
-    useEffect(() => {
-        fetchPeriodData(fieldName, periodDescription).then(setPeriodData);
-    }, [fieldName, periodDescription]);
-
-    return [periodData];
-}
-
-async function fetchPeriodData(
-    fieldName: UsageField,
-    periodDescription: PeriodDescription
-): Promise<MeasurementEntry[]> {
-    const url = periodDescription.toUrl();
-
-    const response = await fetch(`/api/${fieldName}${url}`);
-    const json = await response.json();
-    const data = json.map(parseResponseRow);
-    const paddedData = padData(data, periodDescription.startOfPeriod(), periodDescription.periodSize);
-
-    return paddedData;
-}
-
-function useCarpetData(fieldName: UsageField) {
-    const [carpetData, setCarpetData] = useState<MeasurementEntry[]>([]);
-
-    useEffect(() => {
-        fetchCarpetData(fieldName).then(setCarpetData);
-    }, [fieldName]);
-
-    return [carpetData];
-}
-
-async function fetchCarpetData(fieldName: UsageField): Promise<MeasurementEntry[]> {
-    return fetch(`/api/${fieldName}/last_30_days`)
-        .then((response) => response.json())
-        .then((json) => json.map(parseResponseRow));
-}
+const collapsePeriods = false;
+const collapseCarpets = false;
 
 export const App = () => {
     // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today().previous());
@@ -76,17 +31,9 @@ export const App = () => {
         MonthDescription.thisMonth().previous()
     );
 
-    const [periodGasData] = usePeriodData("gas", periodDescription);
-    const [periodStroomData] = usePeriodData("stroom", periodDescription);
-    const [periodWaterData] = usePeriodData("water", periodDescription);
-
     const [livingRoomTemperatureData, setLivingRoomTemperatureData] = useState<Map<string, MeasurementEntry[]>>(
         new Map()
     );
-
-    const [carpetGasData] = useCarpetData("gas");
-    const [carpetStroomData] = useCarpetData("stroom");
-    const [carpetWaterData] = useCarpetData("water");
 
     const [recentPowerUsageData, setRecentPowerUsageData] = useState<Map<string, MeasurementEntry[]>>(new Map());
     const [currentPowerUsageWatts, setCurrentPowerUsageWatts] = useState<number>(0);
@@ -99,7 +46,7 @@ export const App = () => {
         const updatePowerUsage = () => {
             fetch("/api/stroom/recent")
                 .then((response) => response.json())
-                .then((json) => json.map(parseResponseRow))
+                .then((json) => json.map(responseRowToMeasurementEntry))
                 .then((dataInKW: MeasurementEntry[]) => {
                     const dataInW = dataInKW.map((entry) => ({ ...entry, value: entry.value * 1000 }));
                     setRecentPowerUsageData((existingData) => {
@@ -133,9 +80,6 @@ export const App = () => {
 
     const toString = (el: any) => el.toString();
 
-    const gasGraphDescription = new GasGraphDescription(periodDescription);
-    const stroomGraphDescription = new StroomGraphDescription(periodDescription);
-    const waterGraphDescription = new WaterGraphDescription(periodDescription);
     const currentPowerUsageGraphDescription = new CurrentPowerUsageGraphDescription(periodDescription);
     const temperatuurGraphDescription = new BinnenTemperatuurGraphDescription(periodDescription);
 
@@ -144,67 +88,8 @@ export const App = () => {
     return (
         <NavigationOverlay periodDescription={periodDescription} onSelect={setPeriodDescription}>
             <div className="app">
-                <Row>
-                    <Card
-                        title={buildUsageCardTitle(
-                            "Gas",
-                            periodDescription.startOfPeriod(),
-                            gasGraphDescription,
-                            periodGasData,
-                            "gas"
-                        )}
-                    >
-                        <BarChart
-                            label="Gas"
-                            className={styles.mainGraph}
-                            periodDescription={periodDescription}
-                            graphDescription={gasGraphDescription}
-                            series={periodGasData}
-                            onBarClick={choosePeriod}
-                            tooltipLabelBuilder={toString}
-                            graphTickPositions={periodDescription.graphTickPositions}
-                        />
-                    </Card>
-                    <Card
-                        title={buildUsageCardTitle(
-                            "Stroom",
-                            periodDescription.startOfPeriod(),
-                            stroomGraphDescription,
-                            periodStroomData,
-                            "stroom"
-                        )}
-                    >
-                        <BarChart
-                            label="Stroom"
-                            className={styles.mainGraph}
-                            periodDescription={periodDescription}
-                            graphDescription={stroomGraphDescription}
-                            series={periodStroomData}
-                            onBarClick={choosePeriod}
-                            tooltipLabelBuilder={toString}
-                            graphTickPositions={periodDescription.graphTickPositions}
-                        />
-                    </Card>
-                    <Card
-                        title={buildUsageCardTitle(
-                            "Water",
-                            periodDescription.startOfPeriod(),
-                            waterGraphDescription,
-                            periodWaterData,
-                            "water"
-                        )}
-                    >
-                        <BarChart
-                            label="Water"
-                            className={styles.mainGraph}
-                            periodDescription={periodDescription}
-                            graphDescription={waterGraphDescription}
-                            series={periodWaterData}
-                            onBarClick={choosePeriod}
-                            tooltipLabelBuilder={toString}
-                            graphTickPositions={periodDescription.graphTickPositions}
-                        />
-                    </Card>
+                <Row collapsed={collapsePeriods}>
+                    <PeriodGraphs periodDescription={periodDescription} onPeriodChosen={choosePeriod} />
                 </Row>
                 <Row>
                     <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
@@ -242,40 +127,8 @@ export const App = () => {
                         </Card>
                     </Row>
                 </Row>
-                <Row>
-                    <Card className={styles.wideCard} title="Gas (last 30 days)">
-                        <CarpetChart
-                            className={styles.carpetChart}
-                            width={500}
-                            height={300}
-                            fieldName="gas"
-                            graphDescription={gasGraphDescription}
-                            periodDescription={MonthDescription.thisMonth()}
-                            entries={carpetGasData}
-                        />
-                    </Card>
-                    <Card className={styles.wideCard} title="Stroom (last 30 days)">
-                        <CarpetChart
-                            className={styles.carpetChart}
-                            width={500}
-                            height={300}
-                            fieldName="stroom"
-                            graphDescription={stroomGraphDescription}
-                            periodDescription={MonthDescription.thisMonth()}
-                            entries={carpetStroomData}
-                        />
-                    </Card>
-                    <Card className={styles.wideCard} title="Water (30 days)">
-                        <CarpetChart
-                            className={styles.carpetChart}
-                            width={500}
-                            height={300}
-                            fieldName="water"
-                            graphDescription={waterGraphDescription}
-                            periodDescription={MonthDescription.thisMonth()}
-                            entries={carpetWaterData}
-                        />
-                    </Card>
+                <Row collapsed={collapseCarpets}>
+                    <CarpetCharts periodDescription={periodDescription} />
                 </Row>
             </div>
         </NavigationOverlay>
@@ -292,20 +145,13 @@ async function fetchTemperatureData(periodDescription: PeriodDescription): Promi
     return data;
 }
 
-function parseResponseRow(row: MeasurementResponse): MeasurementEntry {
-    return {
-        timestamp: new Date(Date.parse(row[0])),
-        value: row[1]
-    };
-}
-
 function parseTemperatureResponse(seriesResponse: any): Map<string, MeasurementEntry[]> {
     const result = new Map();
 
     Object.keys(seriesResponse).forEach((seriesName: string) => {
         const series: MeasurementResponse[] = seriesResponse[seriesName];
 
-        result.set(seriesName, series.map(parseResponseRow));
+        result.set(seriesName, series.map(responseRowToMeasurementEntry));
     });
 
     return result;
