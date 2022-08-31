@@ -14,10 +14,7 @@ const collapsePeriods = false;
 const collapseCarpets = false;
 
 export const App = () => {
-    // const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today().previous());
-    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(
-        MonthDescription.thisMonth().previous()
-    );
+    const [periodDescription, setPeriodDescription] = useState<PeriodDescription>(DayDescription.today());
 
     const choosePeriod = (date: Date) => {
         const newPeriod = periodDescription.atIndex(date);
