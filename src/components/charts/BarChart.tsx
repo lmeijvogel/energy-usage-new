@@ -42,10 +42,9 @@ export class BarChart extends ChartWithAxes<SpecificProps> {
 
         this.scaleX.domain(domain).range([this.padding.left + this.axisWidth, this.width - this.padding.right]);
 
-        const bandwidth = this.scaleX.bandwidth();
         this.scaleXForInversion
-            .domain([domain[0], domain[domain.length - 1]])
-            .range([this.axisWidth + bandwidth / 2, this.width - this.padding.right - bandwidth / 2]);
+            .domain([periodDescription.startOfPeriod(), periodDescription.endOfPeriod()])
+            .range([this.axisWidth + this.padding.left, this.width - this.padding.right]);
 
         super.componentDidUpdate();
     }
