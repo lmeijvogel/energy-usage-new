@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { useSwipeable } from "react-swipeable";
 
 import { DayDescription, PeriodDescription } from "../models/PeriodDescription";
@@ -11,9 +11,38 @@ type Props = {
     onSelect: (periodDescription: PeriodDescription) => void;
 };
 
-// TODO: Swipe on mobile? https://www.npmjs.com/package/react-swipeable
+function getWindowWidth() {
+    const rects = document.body.getClientRects();
+    return rects[0].width;
+}
+
+function useDetectMouseAtWindowEdge(displayThresholdInPx: number): [boolean, (x: number) => void] {
+    const [windowWidth, setWindowWidth] = useState(getWindowWidth());
+    const [isMouseAtEdge, setMouseAtEdge] = useState(false);
+
+    useEffect(() => {
+        const onResize = () => {
+            setWindowWidth(getWindowWidth());
+        };
+        window.addEventListener("resize", onResize);
+
+        return () => {
+            window.removeEventListener("resize", onResize);
+        };
+    });
+
+    const setMouseX = (x: number) => {
+        const mouseAtEdge = x <= displayThresholdInPx || x >= windowWidth - displayThresholdInPx;
+
+        setMouseAtEdge(mouseAtEdge);
+    };
+
+    return [isMouseAtEdge, setMouseX];
+}
 
 export function NavigationOverlay({ periodDescription, onSelect, children }: PropsWithChildren<Props>) {
+    const [isMouseAtEdge, setMouseX] = useDetectMouseAtWindowEdge(60);
+
     const previousClicked = () => {
         onSelect(periodDescription.previous());
     };
@@ -38,23 +67,35 @@ export function NavigationOverlay({ periodDescription, onSelect, children }: Pro
         onSwipedRight: previousClicked
     });
 
+    const onMouseMove = (event: any) => {
+        setMouseX(event.clientX);
+    };
+
     return (
         <>
-            <div {...handlers}>
+            <div className={styles.navigationOverlay} {...handlers} onMouseMove={onMouseMove}>
                 <div className={styles.row}>
                     <h1 className={styles.title} onClick={upClicked}>
                         {periodDescription.toTitle()}
                     </h1>
                 </div>
-                <div className={classNames(styles.button, styles.prevButton)} onClick={previousClicked}>
+                <div
+                    className={classNames(styles.button, styles.prevButton, { [styles.hidden]: !isMouseAtEdge })}
+                    onClick={previousClicked}
+                >
                     prev
                 </div>
                 {children}
-                <div className={classNames(styles.button, styles.nextButton)} onClick={nextClicked}>
+                <div
+                    className={classNames(styles.button, styles.nextButton, { [styles.hidden]: !isMouseAtEdge })}
+                    onClick={nextClicked}
+                >
                     next
                 </div>
             </div>
-            <TodayButton onClick={todayClicked}>Today</TodayButton>
+            <div className={styles.buttonContainer}>
+                <TodayButton onClick={todayClicked}>Today</TodayButton>
+            </div>
         </>
     );
 }
