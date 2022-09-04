@@ -7,6 +7,32 @@
     cursor: pointer;
 }
 
+.upButtonsContainer {
+    position: absolute;
+
+    background-color: #e0e0e0;
+    height: 60px;
+    width: 100%;
+
+    top: -80px;
+
+    padding: 10px;
+
+    display: flex;
+    flex-direction: column;
+
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+
+    transition: top 100ms;
+}
+
+.upButtonsContainer.visible {
+    top: 0px;
+}
+
 .button {
     position: fixed;
 
@@ -34,23 +60,23 @@
 }
 
 .prevButton {
-    left: 0;
+    left: -80px;
 
     transition: left 100ms;
 }
 
-.prevButton.hidden {
-    left: -80px;
+.prevButton.visible {
+    left: 0;
 }
 
 .nextButton {
-    right: 0;
+    right: -80px;
 
     transition: right 100ms;
 }
 
-.nextButton.hidden {
-    right: -80px;
+.nextButton.visible {
+    right: 0;
 }
 
 .buttonContainer {

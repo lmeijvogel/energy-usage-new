@@ -6,6 +6,8 @@ import { DayDescription, PeriodDescription } from "../models/PeriodDescription";
 
 import styles from "./NavigationOverlay.module.css";
 
+type Edge = "top" | "left" | "right";
+
 type Props = {
     periodDescription: PeriodDescription;
     onSelect: (periodDescription: PeriodDescription) => void;
@@ -16,9 +18,9 @@ function getWindowWidth() {
     return rects[0].width;
 }
 
-function useDetectMouseAtWindowEdge(displayThresholdInPx: number): [boolean, (x: number) => void] {
+function useDetectMouseAtWindowEdge(displayThresholdInPx: number): [Edge[], (x: number, y: number) => void] {
     const [windowWidth, setWindowWidth] = useState(getWindowWidth());
-    const [isMouseAtEdge, setMouseAtEdge] = useState(false);
+    const [activeEdges, setActiveEdges] = useState<Edge[]>([]);
 
     useEffect(() => {
         const onResize = () => {
@@ -31,17 +33,24 @@ function useDetectMouseAtWindowEdge(displayThresholdInPx: number): [boolean, (x:
         };
     });
 
-    const setMouseX = (x: number) => {
-        const mouseAtEdge = x <= displayThresholdInPx || x >= windowWidth - displayThresholdInPx;
+    const setMouseCoords = (x: number, y: number) => {
+        const mouseAtLeftEdge = x <= displayThresholdInPx;
+        const mouseAtRightEdge = x >= windowWidth - displayThresholdInPx;
+        const mouseAtTopEdge = y <= displayThresholdInPx;
 
-        setMouseAtEdge(mouseAtEdge);
+        const activeEdges: Edge[] = [];
+        if (mouseAtTopEdge) activeEdges.push("top");
+        if (mouseAtLeftEdge) activeEdges.push("left");
+        if (mouseAtRightEdge) activeEdges.push("right");
+
+        setActiveEdges(activeEdges);
     };
 
-    return [isMouseAtEdge, setMouseX];
+    return [activeEdges, setMouseCoords];
 }
 
 export function NavigationOverlay({ periodDescription, onSelect, children }: PropsWithChildren<Props>) {
-    const [isMouseAtEdge, setMouseX] = useDetectMouseAtWindowEdge(60);
+    const [activeEdges, setMouseCoords] = useDetectMouseAtWindowEdge(60);
 
     const previousClicked = () => {
         onSelect(periodDescription.previous());
@@ -68,26 +77,36 @@ export function NavigationOverlay({ periodDescription, onSelect, children }: Pro
     });
 
     const onMouseMove = (event: any) => {
-        setMouseX(event.clientX);
+        setMouseCoords(event.clientX, event.pageY);
     };
 
     return (
         <>
             <div className={styles.navigationOverlay} {...handlers} onMouseMove={onMouseMove}>
+                <div
+                    className={classNames(styles.upButtonsContainer, { [styles.visible]: activeEdges.includes("top") })}
+                    onClick={upClicked}
+                >
+                    up
+                </div>
                 <div className={styles.row}>
                     <h1 className={styles.title} onClick={upClicked}>
                         {periodDescription.toTitle()}
                     </h1>
                 </div>
                 <div
-                    className={classNames(styles.button, styles.prevButton, { [styles.hidden]: !isMouseAtEdge })}
+                    className={classNames(styles.button, styles.prevButton, {
+                        [styles.visible]: activeEdges.includes("left")
+                    })}
                     onClick={previousClicked}
                 >
                     prev
                 </div>
                 {children}
                 <div
-                    className={classNames(styles.button, styles.nextButton, { [styles.hidden]: !isMouseAtEdge })}
+                    className={classNames(styles.button, styles.nextButton, {
+                        [styles.visible]: activeEdges.includes("right")
+                    })}
                     onClick={nextClicked}
                 >
                     next
