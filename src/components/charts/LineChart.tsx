@@ -200,8 +200,10 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
             displayedValue = minValue;
         }
 
-        return `${this.props.periodDescription
+        const displayedTimestamp = this.props.periodDescription
             .atIndex(valuesWithTimestamp[0].timestamp)
-            .toShortTitle()}:<br />${displayedValue}`;
+            .toShortTitle();
+
+        return `${displayedTimestamp}:<br />${displayedValue}`;
     }
 }
