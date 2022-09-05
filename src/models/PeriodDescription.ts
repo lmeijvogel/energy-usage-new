@@ -398,9 +398,14 @@ export class HourDescription extends PeriodDescription {
         return endOfHour(this.startOfPeriod());
     }
 
-    atIndex(_date: Date) {
-        // Not supported, but don't throw Exceptions
-        return this;
+    atIndex(date: Date) {
+        return new MinuteDescription(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            date.getHours(),
+            date.getMinutes()
+        );
     }
 
     toShortTitle() {
@@ -431,8 +436,80 @@ export class LastHourDescription extends HourDescription {
         return sub(this.endOfPeriod(), { hours: 1 });
     }
 
+    toShortTitle() {
+        const nextHour = (this.hour + 1) % 24;
+        const hourDisplay = `${this.hour}:00-${nextHour}:00`;
+        return `${hourDisplay}`;
+    }
+
     getChartTicks() {
         return d3.timeMinute.every(5)!;
+    }
+}
+
+export class MinuteDescription extends PeriodDescription {
+    readonly periodSize = "day";
+
+    constructor(
+        private readonly _year: number,
+        private readonly _month: number,
+        private readonly _day: number,
+        private readonly hour: number,
+        private readonly minute: number
+    ) {
+        super();
+    }
+
+    graphTickPositions: GraphTickPositions = "on_value";
+
+    toUrl(): string {
+        throw new Error("Method not implemented.");
+    }
+    toTitle(): string {
+        throw new Error("Method not implemented.");
+    }
+    toDate(): Date {
+        throw new Error("Method not implemented.");
+    }
+    previous(): PeriodDescription {
+        throw new Error("Method not implemented.");
+    }
+    next(): PeriodDescription {
+        throw new Error("Method not implemented.");
+    }
+    up(): PeriodDescription | null {
+        throw new Error("Method not implemented.");
+    }
+    getChartTicks(): d3.TimeInterval {
+        throw new Error("Method not implemented.");
+    }
+    getExpectedDomainValues(): d3.TimeInterval {
+        throw new Error("Method not implemented.");
+    }
+    normalize(date: Date): Date {
+        throw new Error("Method not implemented.");
+    }
+    timeFormatString(): string {
+        throw new Error("Method not implemented.");
+    }
+    shiftHalfTick(date: Date): Date {
+        throw new Error("Method not implemented.");
+    }
+    relevantDateParts(date: Date): Date {
+        throw new Error("Method not implemented.");
+    }
+    startOfPeriod(): Date {
+        throw new Error("Method not implemented.");
+    }
+    endOfPeriod(): Date {
+        throw new Error("Method not implemented.");
+    }
+    atIndex(date: Date): PeriodDescription {
+        throw new Error("Method not implemented.");
+    }
+
+    toShortTitle() {
+        return `${this.hour}:${this.minute}`;
     }
 }
 
