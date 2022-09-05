@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DayDescription, MonthDescription, PeriodDescription, YearDescription } from "./models/PeriodDescription";
 
 import { Row } from "./components/Row";
