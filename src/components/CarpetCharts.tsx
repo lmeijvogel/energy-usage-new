@@ -48,7 +48,6 @@ export function CarpetCharts({ periodDescription }: Props) {
                     className={styles.carpetChart}
                     width={500}
                     height={300}
-                    fieldName="gas"
                     graphDescription={gasGraphDescription}
                     periodDescription={MonthDescription.thisMonth()}
                     entries={carpetGasData}
@@ -59,7 +58,6 @@ export function CarpetCharts({ periodDescription }: Props) {
                     className={styles.carpetChart}
                     width={500}
                     height={300}
-                    fieldName="stroom"
                     graphDescription={stroomGraphDescription}
                     periodDescription={MonthDescription.thisMonth()}
                     entries={carpetStroomData}
@@ -70,7 +68,6 @@ export function CarpetCharts({ periodDescription }: Props) {
                     className={styles.carpetChart}
                     width={500}
                     height={300}
-                    fieldName="water"
                     graphDescription={waterGraphDescription}
                     periodDescription={MonthDescription.thisMonth()}
                     entries={carpetWaterData}

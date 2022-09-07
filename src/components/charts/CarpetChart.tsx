@@ -2,33 +2,24 @@ import classNames from "classnames";
 import * as d3 from "d3";
 import { addHours, endOfToday, format, isMonday, isSaturday, set, startOfDay, startOfToday } from "date-fns";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { GraphDescription } from "../../models/GraphDescription";
 import { MeasurementEntry } from "../../models/MeasurementEntry";
 import { PeriodDescription } from "../../models/PeriodDescription";
-import { UsageField } from "../../models/UsageData";
 
 type Props = {
     className?: string;
     width: number;
     height: number;
     entries: MeasurementEntry[];
-    fieldName: UsageField;
     periodDescription: PeriodDescription;
     graphDescription: GraphDescription;
 };
 
 const borderGrey = "#ccc";
+type MySvgType = d3.Selection<SVGSVGElement, unknown, null, undefined>;
 
-export function CarpetChart({
-    className,
-    width,
-    height,
-    entries,
-    fieldName,
-    periodDescription,
-    graphDescription
-}: Props) {
+export function CarpetChart({ className, width, height, entries, periodDescription, graphDescription }: Props) {
     const padding = 30;
     const axisWidth = 40;
 
@@ -38,12 +29,18 @@ export function CarpetChart({
     const dayPadding = 1;
 
     useEffect(() => {
-        drawGraph(entries);
+        const element = svgRef.current;
+
+        if (element === null) return;
+
+        const svg: MySvgType = d3.select(element);
+
+        drawGraph(entries, svg);
     }, [entries]);
 
-    const svg = d3.select(`#svg_carpet_${fieldName}`);
+    const svgRef = useRef<SVGSVGElement>(null);
 
-    const drawGraph = (entries: MeasurementEntry[]) => {
+    const drawGraph = (entries: MeasurementEntry[], svg: MySvgType) => {
         const data = entries.map((entry) => truncate(entry.value, 3));
 
         const max: number = Math.max(...data.filter(isDefined));
@@ -104,7 +101,7 @@ export function CarpetChart({
                     lastDate = entry.timestamp.getDate();
                 }
 
-                drawSquare(entry, colorScale, scaleX, scaleY, graph!);
+                drawSquare(entry, colorScale, scaleX, scaleY, svg, graph!);
             }
         }
     };
@@ -112,7 +109,7 @@ export function CarpetChart({
     const drawWeekendMarker = (
         date: Date,
         scaleX: d3.ScaleTime<number, number, never>,
-        container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>
+        container: d3.Selection<d3.BaseType, unknown, null, undefined>
     ) => {
         if (isSaturday(date) || isMonday(date)) {
             let startX = scaleX(startOfDay(date)) - cellWidth / 2 - dayPadding;
@@ -130,7 +127,8 @@ export function CarpetChart({
         colorScale: d3.ScaleLinear<number, number, never>,
         scaleX: d3.ScaleTime<number, number, never>,
         scaleY: d3.ScaleTime<number, number, never>,
-        container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>
+        svg: MySvgType,
+        container: d3.Selection<d3.BaseType, unknown, HTMLElement | null, any>
     ) => {
         const value = entry.value;
         const color = !!value ? colorScale(value) : "white";
@@ -156,15 +154,21 @@ export function CarpetChart({
             .attr("width", cellWidth - 2 * dayPadding)
             .attr("height", cellHeight - 2 * dayPadding)
             .attr("fill", color)
-            .on("mouseenter", (event: any) => showTooltip(event, entry, value, graphDescription))
-            .on("mouseleave", hideTooltip)
+            .on("mouseenter", (event: any) => showTooltip(event, entry, value, graphDescription, svg))
+            .on("mouseleave", () => hideTooltip(svg))
             .attr(
                 "title",
                 `${timestampMappedToToday.getDate()}-${timestampMappedToToday.getMonth()} ${timestampMappedToToday.getHours()}:00 ${value}`
             );
     };
 
-    function showTooltip(event: any, entry: MeasurementEntry, value: number, graphDescription: GraphDescription) {
+    function showTooltip(
+        event: any,
+        entry: MeasurementEntry,
+        value: number,
+        graphDescription: GraphDescription,
+        svg: MySvgType
+    ) {
         const timestamp = entry.timestamp;
 
         const dateString = format(timestamp, "eee yyyy-MM-dd HH:00");
@@ -200,7 +204,7 @@ export function CarpetChart({
             .attr("d", (x) => `M${x.baseVal.value + cellWidth / 2},${padding} V ${height - padding}`);
     }
 
-    function hideTooltip() {
+    function hideTooltip(svg: MySvgType) {
         const tooltip = d3.select("#tooltip");
         tooltip.style("display", "none");
 
@@ -210,7 +214,7 @@ export function CarpetChart({
 
     return (
         <div className="radialGraphContainer">
-            <svg id={`svg_carpet_${fieldName}`}>
+            <svg ref={svgRef}>
                 <g className="values" />
                 <g className="weekendMarkers" />
                 <g className="axes" />
