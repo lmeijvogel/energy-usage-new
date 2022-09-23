@@ -1,6 +1,16 @@
 import classNames from "classnames";
 import * as d3 from "d3";
-import { addHours, endOfToday, format, isMonday, isSaturday, set, startOfDay, startOfToday } from "date-fns";
+import {
+    addHours,
+    differenceInDays,
+    endOfToday,
+    format,
+    isMonday,
+    isSaturday,
+    set,
+    startOfDay,
+    startOfToday
+} from "date-fns";
 
 import { useEffect, useRef } from "react";
 import { GraphDescription } from "../../models/GraphDescription";
@@ -23,10 +33,25 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
     const padding = 30;
     const axisWidth = 40;
 
-    const cellWidth = (width - 2 * padding - axisWidth) / 31;
-    const cellHeight = (height - 2 * padding) / 24;
+    let numberOfRows: number = 20;
+    let numberOfColumns: number = 20;
 
-    const dayPadding = 1;
+    let cellWidth: number = 10;
+    let cellHeight: number = 10;
+
+    useEffect(() => {
+        if (periodDescription.periodSize === "month") {
+            numberOfColumns = 30;
+            numberOfRows = 24;
+        } else {
+            numberOfRows = 12;
+            numberOfColumns = 30;
+        }
+        cellWidth = (width - 2 * padding - axisWidth) / numberOfColumns;
+        cellHeight = (height - 2 * padding) / numberOfRows;
+    }, [periodDescription]);
+
+    const dayPadding = 0;
 
     useEffect(() => {
         const element = svgRef.current;
@@ -77,32 +102,67 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
         /* The `cellWidth / 2` is there to make the scale return the centerpoints of
          * the squares. We can then offset the squares so they end up in the right place.
          */
-        const scaleX = d3
-            .scaleTime()
-            .domain([startOfDay(entries[0].timestamp), startOfToday()])
-            .range([padding + axisWidth + cellWidth / 2, width - padding - cellWidth / 2]);
+        let scaleX: d3.ScaleTime<number, number, never> | d3.ScaleLinear<number, number, never>;
+        let scaleY: d3.ScaleTime<number, number, never> | d3.ScaleLinear<number, number, never>;
 
-        const scaleY = d3
-            .scaleTime()
-            .domain([startOfToday(), endOfToday()])
-            .range([height - padding, padding]);
+        switch (periodDescription.periodSize) {
+            case "month":
+                scaleX = d3
+                    .scaleTime()
+                    .domain([startOfDay(entries[0].timestamp), startOfToday()])
+                    .range([padding + axisWidth + cellWidth / 2, width - padding - cellWidth / 2]);
 
-        const xAxis = d3.axisLeft(scaleY).ticks(d3.timeHour.every(3), d3.timeFormat("%H:%M"));
+                scaleY = d3
+                    .scaleTime()
+                    .domain([startOfToday(), endOfToday()])
+                    .range([height - padding, padding]);
 
-        axisContainer.call(xAxis as any);
+                let lastDate: number | undefined;
 
-        // TODO: Maybe there's another usage as well, maybe "year" with an entry for each day? :D
-        if (periodDescription.periodSize === "month") {
-            let lastDate: number | undefined;
+                for (const entry of entries) {
+                    if (entry.timestamp.getDate() !== lastDate) {
+                        drawWeekendMarker(entry.timestamp, scaleX, graph!);
+                        lastDate = entry.timestamp.getDate();
+                    }
 
-            for (const entry of entries) {
-                if (entry.timestamp.getDate() !== lastDate) {
-                    drawWeekendMarker(entry.timestamp, scaleX, graph!);
-                    lastDate = entry.timestamp.getDate();
+                    drawHourSquare(
+                        entry,
+                        colorScale,
+                        scaleX,
+                        scaleY as d3.ScaleTime<number, number, never>,
+                        svg,
+                        graph!
+                    );
+                }
+                const xAxis = d3.axisLeft(scaleY).ticks(d3.timeHour.every(3), d3.timeFormat("%H:%M"));
+
+                axisContainer.call(xAxis as any);
+
+                break;
+            case "year":
+                scaleX = d3
+                    .scaleLinear()
+                    .domain([numberOfColumns - 1, 0])
+                    .range([padding + axisWidth + cellWidth / 2, width - padding - cellWidth / 2]);
+
+                scaleY = d3
+                    .scaleLinear()
+                    .domain([0, numberOfRows])
+                    .range([height - padding, padding]);
+                for (const entry of entries) {
+                    drawDaySquare(
+                        entry,
+                        colorScale,
+                        scaleX as d3.ScaleLinear<number, number, never>,
+                        scaleY as d3.ScaleLinear<number, number, never>,
+                        svg,
+                        graph!
+                    );
                 }
 
-                drawSquare(entry, colorScale, scaleX, scaleY, svg, graph!);
-            }
+                break;
+            default:
+                throw new Error("Unsupported periodSize " + periodDescription.periodSize);
         }
     };
 
@@ -122,7 +182,7 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
         }
     };
 
-    const drawSquare = (
+    const drawHourSquare = (
         entry: MeasurementEntry,
         colorScale: d3.ScaleLinear<number, number, never>,
         scaleX: d3.ScaleTime<number, number, never>,
@@ -162,6 +222,49 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
             );
     };
 
+    const drawDaySquare = (
+        entry: MeasurementEntry,
+        colorScale: d3.ScaleLinear<number, number, never>,
+        scaleX: d3.ScaleLinear<number, number, never>,
+        scaleY: d3.ScaleLinear<number, number, never>,
+        svg: MySvgType,
+        container: d3.Selection<d3.BaseType, unknown, HTMLElement | null, any>
+    ) => {
+        const value = entry.value;
+        const color = !!value ? colorScale(value) : "white";
+
+        const now = new Date();
+
+        const timestampMappedToToday = set(entry.timestamp, {
+            year: now.getFullYear(),
+            month: now.getMonth(),
+            date: now.getDate()
+        });
+
+        const today = startOfToday();
+        const startOfEntryDate = startOfDay(entry.timestamp);
+
+        const index = differenceInDays(today, startOfEntryDate);
+        const x = scaleX(Math.floor(index / numberOfRows));
+        const y = scaleY(index % numberOfRows);
+
+        container
+            .append("rect")
+            .attr("x", x - cellWidth / 2)
+            .attr("y", y - cellHeight)
+            .attr("width", cellWidth - 2 * dayPadding)
+            .attr("height", cellHeight - 2 * dayPadding)
+            .attr("fill", color)
+            .on("mouseenter", (event: any) => showTooltip(event, entry, value, graphDescription, svg))
+            .on("mouseleave", () => hideTooltip(svg))
+            .attr(
+                "title",
+                `${timestampMappedToToday.getDate()}-${timestampMappedToToday.getMonth()} ${timestampMappedToToday.getHours()}:00 ${value}`
+            );
+    };
+
+    // TODO: Maybe also use mousemove event so that there's always an element selected
+    // even when the mouse is between squares?
     function showTooltip(
         event: any,
         entry: MeasurementEntry,

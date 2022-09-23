@@ -9,6 +9,7 @@ import { Gauge } from "./charts/Gauge";
 import { LineChart } from "./charts/LineChart";
 
 import styles from "../App.module.css";
+import { Row } from "./Row";
 
 async function fetchTemperatureData(periodDescription: PeriodDescription): Promise<Map<string, MeasurementEntry[]>> {
     const url = periodDescription.toUrl();

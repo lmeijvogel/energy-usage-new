@@ -86,6 +86,10 @@ export class YearDescription extends PeriodDescription {
 
     year: number;
 
+    static thisYear(): YearDescription {
+        return new YearDescription(new Date().getFullYear());
+    }
+
     constructor(year: number) {
         super();
         this.year = year;

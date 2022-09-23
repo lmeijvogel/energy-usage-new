@@ -37,9 +37,7 @@ export const App = () => {
                 <Row>
                     <LinesAndGauges periodDescription={periodDescription} />
                 </Row>
-                <Row collapsed={collapseCarpets}>
-                    <CarpetCharts periodDescription={periodDescription} />
-                </Row>
+                {!collapseCarpets && <CarpetCharts periodDescription={periodDescription} />}
             </div>
         </NavigationOverlay>
     );
