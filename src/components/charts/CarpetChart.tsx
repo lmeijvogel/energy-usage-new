@@ -68,12 +68,16 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
     const drawGraph = (entries: MeasurementEntry[], svg: MySvgType) => {
         const data = entries.map((entry) => truncate(entry.value, 3));
 
-        const max: number = Math.max(...data.filter(isDefined));
+        const definedData = data.filter(isDefined);
+        const max: number = Math.max(...definedData);
+        const median = d3.median(definedData) ?? max / 2;
+        // const median = max / 2;
 
         const colorScale = d3
             .scaleLinear()
-            .domain([0, max])
-            .range(["white", graphDescription.barColor as any]);
+            .domain([0, median, max])
+            .range(["white", graphDescription.barColor, graphDescription.darkColor] as any[])
+            .clamp(true);
 
         svg.attr("class", classNames(className));
         svg.attr("viewBox", `0 0 ${width} ${height}`);

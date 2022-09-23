@@ -6,6 +6,7 @@ export abstract class GraphDescription {
     constructor(protected readonly periodDescription: PeriodDescription) {}
 
     abstract readonly barColor: string;
+    abstract readonly darkColor: string;
     abstract readonly lightColor: string;
     abstract readonly fieldName: UsageField | "temperatuur";
 
@@ -51,6 +52,8 @@ function range(start: number, end: number): number[] {
 export class GasGraphDescription extends GraphDescription {
     readonly barColor = "#e73710";
     readonly lightColor = "#e73710";
+    readonly darkColor = "#791d09";
+
     readonly fieldName = "gas";
 
     readonly displayableUnit = "m³";
@@ -72,6 +75,7 @@ export class GasGraphDescription extends GraphDescription {
 export class StroomGraphDescription extends GraphDescription {
     readonly barColor = "#f0ad4e";
     readonly lightColor = "#ffddad";
+    readonly darkColor = "#784805";
     readonly fieldName = "stroom";
     readonly displayableUnit = "kWh";
 
@@ -92,6 +96,7 @@ export class StroomGraphDescription extends GraphDescription {
 export class WaterGraphDescription extends GraphDescription {
     readonly barColor = "#428bca";
     readonly lightColor = "#428bca";
+    readonly darkColor = "#224767";
     readonly fieldName = "water";
 
     readonly displayableUnit = "L";
@@ -117,6 +122,7 @@ export class WaterGraphDescription extends GraphDescription {
 export class CurrentPowerUsageGraphDescription extends GraphDescription {
     readonly barColor = "#f0ad4e";
     readonly lightColor = "#ffddad";
+    readonly darkColor = "#f0ad4e";
     readonly fieldName = "stroom";
     readonly displayableUnit = "W";
 
@@ -132,6 +138,7 @@ export class CurrentPowerUsageGraphDescription extends GraphDescription {
 export class BinnenTemperatuurGraphDescription extends GraphDescription {
     readonly barColor = "#428bca";
     readonly lightColor = "#ffddad";
+    readonly darkColor = "#428bca";
     readonly fieldName = "temperatuur";
 
     readonly displayableUnit = "°C";
