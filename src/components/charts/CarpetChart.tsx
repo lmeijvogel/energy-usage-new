@@ -2,13 +2,15 @@ import classNames from "classnames";
 import * as d3 from "d3";
 import {
     addHours,
-    differenceInDays,
+    differenceInMonths,
     endOfToday,
     format,
+    getDate,
     isMonday,
     isSaturday,
     set,
     startOfDay,
+    startOfMonth,
     startOfToday
 } from "date-fns";
 
@@ -17,6 +19,21 @@ import { GraphDescription } from "../../models/GraphDescription";
 import { MeasurementEntry } from "../../models/MeasurementEntry";
 import { PeriodDescription } from "../../models/PeriodDescription";
 
+const monthNames = [
+    "dec", // This is entry 0; entry 1 is January, so this must be December.
+    "jan",
+    "feb",
+    "mrt",
+    "apr",
+    "mei",
+    "jun",
+    "jul",
+    "aug",
+    "sep",
+    "okt",
+    "nov",
+    "dec"
+];
 type Props = {
     className?: string;
     width: number;
@@ -44,8 +61,8 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
             numberOfColumns = 30;
             numberOfRows = 24;
         } else {
-            numberOfRows = 12;
-            numberOfColumns = 30;
+            numberOfRows = 31;
+            numberOfColumns = 12;
         }
         cellWidth = (width - 2 * padding - axisWidth) / numberOfColumns;
         cellHeight = (height - 2 * padding) / numberOfRows;
@@ -71,7 +88,6 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
         const definedData = data.filter(isDefined);
         const max: number = Math.max(...definedData);
         const median = d3.median(definedData) ?? max / 2;
-        // const median = max / 2;
 
         const colorScale = d3
             .scaleLinear()
@@ -95,22 +111,24 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
             .attr("stroke", borderGrey)
             .attr("stroke-width", "1px");
 
-        const axisContainer = svg.select("g.axes");
+        const yAxisContainer = svg.select("g.yAxis");
+        const xAxisContainer = svg.select("g.xAxis");
 
-        axisContainer.attr("transform", `translate(${padding + axisWidth}, 0)`).style("font-size", "10pt");
+        xAxisContainer.attr("transform", `translate(0, ${height - padding})`).style("font-size", "10pt");
+        yAxisContainer.attr("transform", `translate(${padding + axisWidth}, 0)`).style("font-size", "10pt");
 
         if (entries.length === 0) {
             return;
         }
 
-        /* The `cellWidth / 2` is there to make the scale return the centerpoints of
-         * the squares. We can then offset the squares so they end up in the right place.
-         */
         let scaleX: d3.ScaleTime<number, number, never> | d3.ScaleLinear<number, number, never>;
         let scaleY: d3.ScaleTime<number, number, never> | d3.ScaleLinear<number, number, never>;
 
         switch (periodDescription.periodSize) {
             case "month":
+                /* The `cellWidth / 2` is there to make the scale return the centerpoints of
+                 * the squares. We can then offset the squares so they end up in the right place.
+                 */
                 scaleX = d3
                     .scaleTime()
                     .domain([startOfDay(entries[0].timestamp), startOfToday()])
@@ -138,12 +156,15 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
                         graph!
                     );
                 }
-                const xAxis = d3.axisLeft(scaleY).ticks(d3.timeHour.every(3), d3.timeFormat("%H:%M"));
+                const yAxis = d3.axisLeft(scaleY).ticks(d3.timeHour.every(3), d3.timeFormat("%H:%M"));
 
-                axisContainer.call(xAxis as any);
+                yAxisContainer.call(yAxis as any);
 
                 break;
             case "year":
+                /* The `cellWidth / 2` is there to make the scale return the centerpoints of
+                 * the squares. We can then offset the squares so they end up in the right place.
+                 */
                 scaleX = d3
                     .scaleLinear()
                     .domain([numberOfColumns - 1, 0])
@@ -163,6 +184,20 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
                         graph!
                     );
                 }
+
+                const lastEntry = entries[entries.length - 1];
+                const currentMonth = lastEntry.timestamp.getMonth() + 1; // 0-based
+
+                const yAxisForYear = d3.axisLeft(scaleY).ticks(5);
+
+                yAxisContainer.call(yAxisForYear as any);
+
+                const xAxisForYear = d3.axisBottom(scaleX).tickFormat((domainValue: d3.NumberValue, index: number) => {
+                    return monthNames[(12 + currentMonth - domainValue.valueOf()) % 12];
+                    return `b ${domainValue}`;
+                    return "Boe";
+                });
+                xAxisContainer.call(xAxisForYear as any);
 
                 break;
             default:
@@ -248,9 +283,8 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
         const today = startOfToday();
         const startOfEntryDate = startOfDay(entry.timestamp);
 
-        const index = differenceInDays(today, startOfEntryDate);
-        const x = scaleX(Math.floor(index / numberOfRows));
-        const y = scaleY(index % numberOfRows);
+        const x = scaleX(differenceInMonths(startOfMonth(today), startOfMonth(startOfEntryDate)));
+        const y = scaleY(getDate(startOfEntryDate) - 1);
 
         container
             .append("rect")
@@ -324,7 +358,8 @@ export function CarpetChart({ className, width, height, entries, periodDescripti
             <svg ref={svgRef}>
                 <g className="values" />
                 <g className="weekendMarkers" />
-                <g className="axes" />
+                <g className="xAxis" />
+                <g className="yAxis" />
                 <g className="crosshairs" />
             </svg>
         </div>
