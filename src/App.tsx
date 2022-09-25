@@ -8,7 +8,6 @@ import { CarpetCharts } from "./components/CarpetCharts";
 import { LinesAndGauges } from "./components/LinesAndGauges";
 
 export type MeasurementResponse = [timestampString: string, value: number];
-export type MinMaxMeasurementResponse = [timestampString: string, minValue: number, maxValue: number];
 
 const collapsePeriods = false;
 const collapseCarpets = false;

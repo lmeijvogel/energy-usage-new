@@ -9,7 +9,6 @@ import { Gauge } from "./charts/Gauge";
 import { LineChart } from "./charts/LineChart";
 
 import styles from "../App.module.css";
-import { Row } from "./Row";
 
 async function fetchTemperatureData(periodDescription: PeriodDescription): Promise<Map<string, MeasurementEntry[]>> {
     const url = periodDescription.toUrl();
@@ -79,6 +78,11 @@ export function LinesAndGauges({ periodDescription }: Props) {
 
     const lastHourPeriodDescription = new LastHourDescription();
 
+    const temperatuurLineColors = new Map<string, string>();
+    temperatuurLineColors.set("huiskamer", "red");
+    temperatuurLineColors.set("tuinkamer", "green");
+    temperatuurLineColors.set("zolder", "blue");
+
     return (
         <>
             <Card title={`Huidig stroomverbruik (${currentPowerUsageWatts} W)`}>
@@ -90,6 +94,8 @@ export function LinesAndGauges({ periodDescription }: Props) {
                     allSeries={recentPowerUsageData}
                     tooltipLabelBuilder={toString}
                     graphTickPositions={periodDescription.graphTickPositions}
+                    fillArea={true}
+                    defaultLineColor={currentPowerUsageGraphDescription.barColor}
                 />
             </Card>
             <Card className={styles.narrowGraph} title="Actueel verbruik">
@@ -102,15 +108,17 @@ export function LinesAndGauges({ periodDescription }: Props) {
                     fieldName="current"
                 />
             </Card>
-            <Card title={`Temperatuur huiskamer`}>
+            <Card title={"Temperatuur"}>
                 <LineChart
-                    label="Temperatuur_Huiskamer"
+                    label="Temperatuur"
                     className={styles.mainGraph}
                     periodDescription={periodDescription}
                     graphDescription={temperatuurGraphDescription}
                     allSeries={livingRoomTemperatureData}
                     tooltipLabelBuilder={toString}
                     graphTickPositions={periodDescription.graphTickPositions}
+                    lineColors={temperatuurLineColors}
+                    defaultLineColor={"black"}
                 />
             </Card>
         </>

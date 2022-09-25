@@ -14,7 +14,6 @@ export type ChartWithAxesProps = {
     label: string;
     periodDescription: PeriodDescription;
     graphDescription: GraphDescription;
-    // colorIntense: string;
     tooltipLabelBuilder: (title: number) => string;
     graphTickPositions: GraphTickPositions;
 };
