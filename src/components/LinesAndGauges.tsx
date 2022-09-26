@@ -119,6 +119,7 @@ export function LinesAndGauges({ periodDescription }: Props) {
                     graphTickPositions={periodDescription.graphTickPositions}
                     lineColors={temperatuurLineColors}
                     defaultLineColor={"black"}
+                    relativeMinMax={true}
                 />
             </Card>
         </>

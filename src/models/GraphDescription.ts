@@ -144,11 +144,11 @@ export class BinnenTemperatuurGraphDescription extends GraphDescription {
     readonly displayableUnit = "°C";
 
     override get minY() {
-        return 15;
+        return 18;
     }
 
     get maxY() {
-        return 35;
+        return 30;
     }
 
     get tooltipValueFormat() {

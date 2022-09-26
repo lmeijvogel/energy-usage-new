@@ -145,7 +145,7 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
         // Find all y-values to highlight
         const ys = Array.from(this.props.allSeries.values()).map((series) => {
             var closestIndex = bisect(series, pointerDate, 1) - 1;
-            return this.scaleY(series[closestIndex].value);
+            return this.scaleY(series[closestIndex]?.value);
         });
 
         this.svg!.select("g.crosshairs g.horizontal")
@@ -214,5 +214,24 @@ export class LineChart extends ChartWithAxes<SpecificProps> {
             .toShortTitle();
 
         return `${displayedTimestamp}:<br>${displayedValue}`;
+    }
+
+    protected override getDomain(): number[] {
+        const [min, max] = this.getMinValue(this.props.allSeries.values());
+
+        const range = max - min;
+
+        const padding = range * 0.1;
+
+        return [Math.round(min - padding - 0.5), Math.round(max + padding + 0.5)];
+    }
+
+    private getMinValue(allSeries: Iterable<Series>): [min: number, max: number] {
+        const allValues = Array.from(allSeries).flatMap((series) => series.flatMap((valueWithTs) => valueWithTs.value));
+
+        const min = Math.min(...allValues);
+        const max = Math.max(...allValues);
+
+        return [min, max];
     }
 }

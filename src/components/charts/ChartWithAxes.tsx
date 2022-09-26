@@ -16,6 +16,7 @@ export type ChartWithAxesProps = {
     graphDescription: GraphDescription;
     tooltipLabelBuilder: (title: number) => string;
     graphTickPositions: GraphTickPositions;
+    relativeMinMax?: boolean;
 };
 
 export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProps & T> {
@@ -86,9 +87,11 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
     }
 
     private renderGraph(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>) {
-        this.scaleY
-            .domain([this.props.graphDescription.minY, this.props.graphDescription.maxY])
-            .range([this.height - this.padding.bottom - this.xAxisHeight(), this.padding.top]);
+        const domain = this.props.relativeMinMax
+            ? this.getDomain()
+            : [this.props.graphDescription.minY, this.props.graphDescription.maxY];
+
+        this.scaleY.domain(domain).range([this.height - this.padding.bottom - this.xAxisHeight(), this.padding.top]);
 
         this.drawValues(svg);
 
@@ -109,4 +112,8 @@ export abstract class ChartWithAxes<T> extends React.Component<ChartWithAxesProp
     protected abstract renderXAxis(xAxisBase: d3.Selection<d3.BaseType, unknown, HTMLElement, any>): void;
 
     protected abstract drawValues(svg: d3.Selection<d3.BaseType, unknown, HTMLElement, any>): void;
+
+    protected getDomain(): number[] {
+        return [this.props.graphDescription.minY, this.props.graphDescription.maxY];
+    }
 }
